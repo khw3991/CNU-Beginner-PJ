@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickMovie - 가까운 상영관 찾기</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+    <header>
+        <h1 id="logo">🎬 QuickMovie</h1>
+    </header>
+
+    <main id="app">
+        <section id="main-page" class="page">
+            <div class="main-top">
+                <div id="mini-map-container">
+                    <div id="map"></div> </div>
+                <div class="popular-section">
+                    <h2>현재 인기 영화 TOP 5</h2>
+                    <div id="popular-list" class="movie-row">
+                        </div>
+                </div>
+            </div>
+            <div class="search-section">
+                <input type="text" id="search-input" placeholder="보고 싶은 영화를 검색하세요...">
+                <button id="search-btn">검색</button>
+            </div>
+        </section>
+
+        <section id="search-page" class="page hidden">
+            <h2 id="search-title">검색 결과</h2>
+            <div id="search-results" class="movie-grid">
+                </div>
+        </section>
+
+        <section id="detail-page" class="page hidden">
+            <div class="detail-container">
+                <div class="detail-left">
+                    <img id="detail-poster" src="" alt="포스터">
+                </div>
+                <div class="detail-right">
+                    <h1 id="detail-title">영화 제목</h1>
+                    <div class="filter-options">
+                        <span>거리 설정: </span>
+                        <button class="dist-opt" data-dist="1">1km</button>
+                        <button class="dist-opt active" data-dist="3">3km</button>
+                        <button class="dist-opt" data-dist="5">5km</button>
+                        <button class="dist-opt" data-dist="7">7km</button>
+                    </div>
+                    <div id="theater-list">
+                        </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
