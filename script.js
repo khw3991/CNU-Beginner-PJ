@@ -17,6 +17,8 @@ const theaters = [
 let userCoords = { lat: 37.5665, lng: 126.9780 }; // 기본 서울
 let currentDistance = 3; // 기본 3km
 let map;
+let minTime = 0;
+let maxTime = 24;
 
 // --- 3. 유틸리티 함수 (거리 계산 하버사인 공식) ---
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -31,6 +33,11 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 // 초기 실행: 위치 정보 가져오기 및 맵 세팅
 function init() {
+    // [추가] 페이지 로드 시 날짜 버튼을 바로 만듭니다.
+    renderDateButtons();
+    // [추가] 시간 슬라이더 초기 설정
+    setupTimeSlider();
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(pos => {
             userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
@@ -38,6 +45,72 @@ function init() {
             renderMain();
         });
     }
+}
+
+// [추가] 오늘부터 6일간의 날짜 버튼 생성 함수
+function renderDateButtons() {
+    const container = document.getElementById('date-buttons-container');
+    if(!container) return; // HTML에 해당 id가 있을 때만 실행
+
+    const today = new Date();
+    container.innerHTML = ''; // 초기화
+
+    for (let i = 0; i < 6; i++) {
+        const futureDate = new Date();
+        futureDate.setDate(today.getDate() + i);
+        const day = futureDate.getDate();
+
+        const btn = document.createElement('button');
+        btn.className = 'date-btn';
+        if (i === 0) btn.classList.add('active');
+        btn.textContent = day;
+        
+        btn.onclick = () => {
+            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // 여기서 날짜 변경 시 데이터를 다시 불러오는 로직을 추가할 수 있어요.
+        };
+        container.appendChild(btn);
+    }
+}
+
+// [추가] 시간 슬라이더 작동 함수
+function setupTimeSlider() {
+    const minInput = document.getElementById('time-min');
+    const maxInput = document.getElementById('time-max');
+    const minLabel = document.getElementById('min-label');
+    const maxLabel = document.getElementById('max-label');
+    const track = document.querySelector('.slider-track'); // 트랙 가져오기
+
+    if(!minInput || !maxInput) return;
+
+    const updateRange = () => {
+        if (parseInt(minInput.value) > parseInt(maxInput.value)) {
+            minInput.value = maxInput.value;
+        }
+        const minVal = parseInt(minInput.value);
+        const maxVal = parseInt(maxInput.value);
+
+        // --- 여기서부터 핵심: 배경색 칠하기 ---
+        // (min% 지점까지는 회색, min%~max%는 파란색, max% 이후는 다시 회색)
+        const minPercent = (minVal / 24) * 100;
+        const maxPercent = (maxVal / 24) * 100;
+        track.style.background = `linear-gradient(to right, #ddd ${minPercent}%, #007bff ${minPercent}%, #007bff ${maxPercent}%, #ddd ${maxPercent}%)`;
+        // --------------------------------------
+
+        minLabel.textContent = minVal.toString().padStart(2, '0') + ":00";
+        maxLabel.textContent = maxVal.toString().padStart(2, '0') + ":00";
+        
+        minTime = minVal;
+        maxTime = maxVal;
+
+        // 슬라이더를 움직일 때마다 검색 결과를 다시 필터링하고 싶다면 여기에 함수 추가
+    };
+
+    minInput.addEventListener('input', updateRange);
+    maxInput.addEventListener('input', updateRange);
+
+    updateRange();
 }
 
 function setupMap() {
@@ -74,6 +147,7 @@ document.getElementById('search-btn').addEventListener('click', () => {
         <div class="movie-item" onclick="viewDetail(${m.id})">
             <img src="${m.poster}">
             <h3>${m.title}</h3>
+            <p>상영 시간 범위: ${minTime}:00 ~ ${maxTime}:00</p>
         </div>
     `).join('');
 });

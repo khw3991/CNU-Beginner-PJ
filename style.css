@@ -44,3 +44,48 @@ header { padding: 20px; border-bottom: 1px solid #eee; cursor: pointer; }
 .theater-item:hover { background: #f9f9f9; }
 .theater-name { font-weight: bold; font-size: 1.1rem; }
 .theater-dist { color: #666; }
+
+.dual-range-container {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 10px 0;
+}
+
+/* 기본 바닥 막대 */
+.slider-track {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 5px;
+    background-color: #ddd; /* 회색 바탕 */
+    border-radius: 5px;
+    z-index: 1;
+}
+
+/* 두 슬라이더를 겹치게 설정 */
+.dual-range-container input[type="range"] {
+    position: absolute;
+    width: 100%;
+    pointer-events: none; /* 클릭 방해 금지 */
+    appearance: none;
+    background: none;
+    pointer-events: none;
+    z-index: 2;
+    margin: 0;
+}
+
+/* 슬라이더 손잡이(Thumb)는 클릭 가능하게 */
+.dual-range-container input[type="range"]::-webkit-slider-thumb {
+    pointer-events: auto;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007bff; 
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto; /* 점은 클릭 가능하게 */
+    border: 2px solid white;
+    box-shadow: 0 0 2px rgba(0,0,0,0.3);
+}

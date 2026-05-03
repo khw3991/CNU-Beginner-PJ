@@ -31,8 +31,42 @@
         </section>
 
         <section id="search-page" class="page hidden">
-            <h2 id="search-title">검색 결과</h2>
-            <div id="search-results" class="movie-grid">
+            <div class="search-controls">
+                <div class="date-picker">
+                    <span>날짜</span>
+                    <button class="date-btn">7</button>
+                    <button class="date-btn">8</button>
+                    <button class="date-btn active">9</button>
+                    <button class="date-btn">10</button>
+                    <button class="date-btn">11</button>
+                    <button class="date-btn">12</button>
+                </div>
+
+                <div class="time-range-section">
+                    <label>시간 범위 조절</label>
+                    <div class="dual-range-container">
+                        <!-- 시작 시간 조절 -->
+                        <input type="range" id="time-min" min="0" max="24" value="9" step="1">
+                        <!-- 종료 시간 조절 -->
+                        <input type="range" id="time-max" min="0" max="24" value="21" step="1">
+        
+                        <!-- 선택된 범위를 시각적으로 보여줄 막대 -->
+                        <div class="slider-track"></div>
+                    </div>
+                    <div class="time-labels">
+                        <span id="min-label">09:00</span>
+                        <span>~</span>
+                        <span id="max-label">21:00</span>
+                    </div>
+                </div
+            
+
+                <!-- 3. 검색 결과 리스트 (거리순) -->
+                <div class="results-container">
+                    <h2 id="search-title">검색 결과 (거리순 ↓)</h2>
+                    <div id="search-results" class="movie-list-vertical">
+                        <!-- 여기에 script.js가 영화 정보를 채워줄 거예요 -->
+                    </div>
                 </div>
         </section>
 
