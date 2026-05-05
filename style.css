@@ -5,7 +5,7 @@ body { font-family: 'Pretendard', sans-serif; background: #fff; color: #333; }
 header { padding: 20px; border-bottom: 1px solid #eee; cursor: pointer; }
 
 /* 메인 페이지 레이아웃 */
-.main-top { display: flex; gap: 30px; padding: 40px; }
+.main-top { display: flex; gap: 30px; padding: 40px; width : 80%; margin: 0 auto; }
 #mini-map-container { width: 300px; height: 300px; border-radius: 12px; overflow: hidden; border: 2px solid #ddd; }
 #map { width: 100%; height: 100%; }
 
@@ -18,12 +18,28 @@ header { padding: 20px; border-bottom: 1px solid #eee; cursor: pointer; }
 .search-section { text-align: center; margin-top: 50px; }
 #search-input { width: 400px; padding: 15px; border: 2px solid #ddd; border-radius: 8px 0 0 8px; }
 #search-btn { padding: 15px 30px; background: #000; color: #fff; border: none; border-radius: 0 8px 8px 0; cursor: pointer; }
-
+#search-title {font-size: 1.5rem; margin-bottom: 20px; text-align: center;}
 /* 검색 결과 그리드 (한 줄에 4개) */
-.movie-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; padding: 40px; }
-.movie-item { cursor: pointer; transition: transform 0.2s; }
+.movie-grid { 
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 30px;            
+    padding: 40px;
+    width: 100%;          
+    max-width: 1200px;    
+    margin: 0 auto }
+.movie-item { 
+    width: 100%;          
+    cursor: pointer;
+    transition: transform 0.2s;
+    text-align: center; }
 .movie-item:hover { transform: translateY(-5px); }
-.movie-item img { width: 100%; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.movie-item img {
+    width: 100%;          
+    aspect-ratio: 2 / 3;  
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
 /* 상세 페이지 */
 .detail-container { display: flex; padding: 50px; gap: 60px; }
@@ -44,3 +60,50 @@ header { padding: 20px; border-bottom: 1px solid #eee; cursor: pointer; }
 .theater-item:hover { background: #f9f9f9; }
 .theater-name { font-weight: bold; font-size: 1.1rem; }
 .theater-dist { color: #666; }
+
+.dual-range-container {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 10px 0;
+}
+
+/* 기본 바닥 막대 */
+.slider-track {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 5px;
+    background-color: #ddd; /* 회색 바탕 */
+    border-radius: 5px;
+    z-index: 1;
+}
+
+/* 두 슬라이더를 겹치게 설정 */
+.dual-range-container input[type="range"] {
+    position: absolute;
+    width: 100%;
+    pointer-events: none; /* 클릭 방해 금지 */
+    appearance: none;
+    background: none;
+    pointer-events: none;
+    z-index: 2;
+    margin: 0;
+    align-content: center;
+}
+
+/* 슬라이더 손잡이(Thumb)는 클릭 가능하게 */
+.dual-range-container input[type="range"]::-webkit-slider-thumb {
+    pointer-events: auto;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #007bff; 
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto; /* 점은 클릭 가능하게 */
+    border: 2px solid white;
+    box-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
