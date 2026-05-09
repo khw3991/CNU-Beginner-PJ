@@ -74,7 +74,7 @@ function renderDateButtons() {
     }
 }
 
-// [추가] 시간 슬라이더 작동 함수
+// 시간 슬라이더 작동 함수
 function setupTimeSlider() {
     const minInput = document.getElementById('time-min');
     const maxInput = document.getElementById('time-max');
@@ -139,10 +139,14 @@ function renderMain() {
 }
 
 // 검색 기능 
-document.getElementById('search-btn').addEventListener('click', () => {
-    showPage('search-page');
+
+function displayMovies(filterKeyword = ""){
     const results = document.getElementById('search-results');
-    // 실제로는 필터링 로직이 들어가야 함 (여기선 전체 출력)
+    /*
+    const filteredMovies=filterKeyword
+        ? movies.filter(m=> m.title.includes(filterKeyword))
+        : movies;
+    */
     results.innerHTML = movies.map(m => `
         <div class="movie-item" onclick="viewDetail(${m.id})">
             <img src="${m.poster}">
@@ -150,7 +154,35 @@ document.getElementById('search-btn').addEventListener('click', () => {
             <p>상영 시간 범위: ${minTime}:00 ~ ${maxTime}:00</p>
         </div>
     `).join('');
-});
+}
+
+const searchBtn = document.getElementById('search-btn');
+const discoverBtn = document.getElementById('discover-btn');
+
+if(searchBtn){
+    searchBtn.addEventListener('click', ()=> {
+        showPage('search-page');
+        const searchInput=document.getElementById('search-input');
+        displayMovies(searchInput ? searchInput.value : "");
+    
+    });
+}
+if(discoverBtn){
+    discoverBtn.addEventListener('click', ()=>{
+        showPage('search-page');
+        displayMovies("");
+    });
+}
+
+const resultSearchBtn = document.getElementById('result-search-btn');
+const resultSearchInput = document.getElementById('result-search-input');
+
+if(resultSearchBtn){
+    resultSearchBtn.addEventListener('click', ()=>{
+        displayMovies(resultSearchInput.value);
+    });
+}
+
 
 // 상세 페이지 보기
 function viewDetail(movieId) {
@@ -206,3 +238,5 @@ document.querySelectorAll('.dist-opt').forEach(btn => {
 document.getElementById('logo').onclick = () => showPage('main-page');
 
 init();
+
+
