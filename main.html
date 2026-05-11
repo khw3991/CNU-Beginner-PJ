@@ -10,93 +10,120 @@
 <body>
 
     <header>
-        <h1 id="logo">🎬 QuickMovie</h1>
+        <h1 id="logo"><span class="logo-icon">🎬</span> QuickMovie</h1>
+        <nav id="breadcrumb"></nav>
     </header>
 
     <main id="app">
+
+        <!-- ① 메인 페이지 -->
         <section id="main-page" class="page">
             <div class="main-top">
                 <div id="mini-map-container">
-                    <div id="map"></div> </div>
+                    <div id="map"></div>
+                </div>
                 <div class="popular-section">
-                    <h2>현재 인기 영화 TOP 10</h2>
+                    <h2 class="section-title">현재 인기 영화 TOP 10</h2>
+                    <!-- 슬라이더 뷰포트: 넘치는 카드는 숨김 -->
                     <div class="slider-viewport">
-                        <div id="popular-list" class="movie-row">
-                            </div>
+                        <div id="popular-list" class="movie-row"></div>
                     </div>
                 </div>
             </div>
             <div class="search-section">
-                <input type="text" id="search-input" placeholder="보고 싶은 영화를 검색하세요...">
-                <button id="search-btn">검색</button>
-                <button id="discover-btn" class="secondary-btn"> 지금 볼 영화 찾기 </button>
+                <div class="search-bar-wrap">
+                    <input type="text" id="search-input" placeholder="보고 싶은 영화를 검색하세요...">
+                    <button id="search-btn">검색</button>
+                </div>
+                <button id="discover-btn">🎲 지금 볼 영화 찾기</button>
             </div>
         </section>
 
+        <!-- ② 영화 검색 페이지 -->
         <section id="search-page" class="page hidden">
-            <div class="search-section-mini">
-                <input type="text" id="result-search-input" placeholer="영화 다시 검색...">
-                <button id="result-search-btn">검색</button>
+
+            <!-- 상단 필터 바 -->
+            <div class="filter-topbar">
+                <div class="filter-topbar-inner">
+
+                    <!-- 검색창 -->
+                    <div class="search-bar-mini">
+                        <input type="text" id="result-search-input" placeholder="영화 검색...">
+                        <button id="result-search-btn">검색</button>
+                    </div>
+
+                    <!-- 날짜 -->
+                    <div class="topbar-section">
+                        <span class="topbar-label">날짜 <small>(없으면 전체)</small></span>
+                        <div id="date-buttons-container" class="date-picker-row"></div>
+                    </div>
+
+                    <!-- 시간 범위 -->
+                    <div class="topbar-section time-section">
+                        <span class="topbar-label">시간 범위</span>
+                        <div class="time-range-wrap">
+                            <div class="dual-range-container">
+                                <input type="range" id="time-min" min="0" max="1440" value="0" step="10">
+                                <input type="range" id="time-max" min="0" max="1440" value="1440" step="10">
+                                <div class="slider-track"></div>
+                            </div>
+                            <div class="time-range-display">
+                                <input type="text" id="time-min-input" class="time-text-input" value="00:00" maxlength="5">
+                                <span class="time-tilde">~</span>
+                                <input type="text" id="time-max-input" class="time-text-input" value="24:00" maxlength="5">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 필터 초기화 -->
+                    <button id="reset-filter-btn">✕ 초기화</button>
+
+                </div>
             </div>
 
-            <div class="search-controls">
-                <div class="date-picker">
-                    <span>날짜</span>
-                    <button class="date-btn">7</button>
-                    <button class="date-btn">8</button>
-                    <button class="date-btn active">9</button>
-                    <button class="date-btn">10</button>
-                    <button class="date-btn">11</button>
-                    <button class="date-btn">12</button>
+            <!-- 결과 영역 -->
+            <div class="search-results-area">
+                <div class="results-header">
+                    <div class="results-header-left">
+                        <span id="search-title">전체 영화</span>
+                        <span id="result-count" class="result-count"></span>
+                    </div>
+                    <div class="sort-btns">
+                        <button class="sort-btn active" data-sort="default">등록순</button>
+                        <button class="sort-btn" data-sort="rating">평점순</button>
+                        <button class="sort-btn" data-sort="seats">좌석순</button>
+                    </div>
                 </div>
+                <div id="search-results" class="movie-grid"></div>
+            </div>
 
-                <div class="time-range-section">
-                    <label>시간 범위 조절</label>
-                    <div class="dual-range-container">
-                        <!-- 시작 시간 조절 -->
-                        <input type="range" id="time-min" min="0" max="24" value="9" step="1">
-                        <!-- 종료 시간 조절 -->
-                        <input type="range" id="time-max" min="0" max="24" value="21" step="1">
-        
-                        <!-- 선택된 범위를 시각적으로 보여줄 막대 -->
-                        <div class="slider-track"></div>
-                    </div>
-                    <div class="time-labels">
-                        <span id="min-label">09:00</span>
-                        <span>~</span>
-                        <span id="max-label">21:00</span>
-                    </div>
-                </div>
-            
-
-                <!-- 3. 검색 결과 리스트 (거리순) -->
-                <div class="results-container">
-                    <span id="search-title">검색 결과 (거리순 ↓)</span>
-                    <div id="search-results" class="movie-grid">
-                        <!-- 여기에 script.js가 영화 정보를 채워줄 거예요 -->
-                    </div>
-                </div>
         </section>
 
+        <!-- ③ 영화 상세 페이지 -->
         <section id="detail-page" class="page hidden">
             <div class="detail-container">
                 <div class="detail-left">
                     <img id="detail-poster" src="" alt="포스터">
+                    <div class="detail-meta">
+                        <span id="detail-rating" class="badge-rating"></span>
+                        <span id="detail-audience" class="badge-audience"></span>
+                    </div>
                 </div>
                 <div class="detail-right">
                     <h1 id="detail-title">영화 제목</h1>
+                    <p class="section-sub">내 위치 기준 상영관 (거리순)</p>
                     <div class="filter-options">
-                        <span>거리 설정: </span>
+                        <span class="filter-tag">거리 설정:</span>
                         <button class="dist-opt" data-dist="1">1km</button>
                         <button class="dist-opt active" data-dist="3">3km</button>
                         <button class="dist-opt" data-dist="5">5km</button>
                         <button class="dist-opt" data-dist="7">7km</button>
                     </div>
-                    <div id="theater-list">
-                        </div>
+                    <div id="theater-list"></div>
                 </div>
             </div>
         </section>
+
     </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
