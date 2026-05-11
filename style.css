@@ -4,16 +4,105 @@ body { font-family: 'Pretendard', sans-serif; background: #fff; color: #333; }
 .hidden { display: none !important; }
 header { padding: 20px; border-bottom: 1px solid #eee; cursor: pointer; }
 
-/* 메인 페이지 레이아웃 */
-.main-top { display: flex; gap: 30px; padding: 40px; width : 80%; margin: 0 auto; }
-#mini-map-container { width: 300px; height: 300px; border-radius: 12px; overflow: hidden; border: 2px solid #ddd; }
+/* 메인 페이지 레이아웃 수정 */
+.main-top { 
+    display: flex; 
+    align-items: stretch; /* [중요] 자식 요소들의 높이를 동일하게 맞춤 */
+    justify-content: center; /* 중앙 정렬 */
+    gap: 30px; 
+    padding: 40px; 
+    max-width: 1200px; /* 너무 퍼지지 않게 최대 너비 설정 */
+    width: 95%; 
+    margin: 0 auto; 
+    height: 480px; /* [중요] 전체 높이를 480px로 고정 */
+}
+/* 지도 컨테이너 수정 */
+#mini-map-container { 
+    flex: 0 0 350px; /* [중요] 지도의 너비를 350px로 고정 (줄어들지 않음) */
+    height: 400px;   /* 기준 높이 설정 */
+    border-radius: 8px; 
+    overflow: hidden; 
+    border: 2px solid #ddd; 
+}
+
 #map { width: 100%; height: 100%; }
 
-.popular-section { flex: 1; }
+/* 인기 영화 섹션 수정 */
+.popular-section { 
+    flex: 1;        /* 남은 가로 공간을 모두 차지 */
+    display: flex; 
+    flex-direction: column; 
+    height: 400px;   /* 지도와 같은 높이로 맞춤 */
+    min-width: 0;   /* 슬라이더가 부모를 뚫고 나가는 현상 방지 */
+}
+.popular-section h2 {
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
 .movie-row { display: flex; gap: 15px; margin-top: 20px; }
-.movie-card-mini { width: 120px; text-align: center; }
-.movie-card-mini img { width: 100%; border-radius: 8px; }
 
+/* 슬라이더 창: 한 번에 4개만 보이게 설정 */
+.slider-viewport {
+    flex: 1;        /* [중요] 제목을 제외한 나머지 높이를 꽉 채움 (지도의 높이와 같아짐) */
+    overflow: hidden; 
+    position: relative;
+    border-radius: 12px;
+}
+
+/* 영화 리스트: flex로 가로 정렬하고 애니메이션 효과 부여 */
+#popular-list {
+    display: flex;
+    height: 100%;   /* 부모(viewport)의 높이를 100% 따름 */
+    gap: 8px;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    width: max-content; /* 내용물만큼 길이를 가짐 */
+}
+
+/* 각 영화 카드: 4개가 꽉 차도록 너비를 25%로 고정 */
+.movie-card-mini {
+    flex: 0 0 180px;   
+    width: 180px;      
+    max-width: 180px;
+
+    height: 100%;   /* 슬라이더 높이에 맞춤 */
+    padding: 0; /* 카드 사이 간격 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    overflow: hidden; /* 박스 밖으로 나가는 것 차단 */
+}
+
+.movie-card-mini img {
+    width: 100%;       /* 부모 너비인 180px에 맞춤 */
+    height: auto;      /* 가로에 맞춰 세로 비율 유지 */
+    aspect-ratio: 2 / 3; /* 2:3 비율 강제 유지 */
+    object-fit: cover; 
+    border-radius: 8px;
+
+    min-height: 0;    /* flex 자식 요소의 최소 높이 제한 해제 (이미지 찌그러짐 방지) */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    /* 혹시 모를 늘어남 방지 */
+    flex-shrink: 0;
+}
+
+.movie-card-mini small {
+    margin-bottom: 5px;
+    color: #888;
+    font-weight: bold;
+}
+/* 제목이 길어서 박스가 커지는 것 방지 */
+.movie-card-mini p {
+    width: 100%;
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 제목이 길면 ... 처리 */
+}
 /* 검색창 */
 .search-section { text-align: center; margin-top: 50px; }
 #search-input { width: 400px; padding: 15px; border: 2px solid #ddd; border-radius: 8px 0 0 8px; }
