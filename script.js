@@ -3,11 +3,15 @@
 // ─────────────────────────────────────────────
 
 // --- 1. API 키 ---
-const KOBIS_API_KEY = "4cc66795e4272f37db6169ed85eed268";
-const TMDB_API_KEY  = "96a2f165cbef86dc5d7af5cc9c31fb62";
+const KOBIS_API_KEY  = "4cc66795e4272f37db6169ed85eed268";
+const TMDB_API_KEY   = "96a2f165cbef86dc5d7af5cc9c31fb62";
+const GOOGLE_API_KEY = "AIzaSyCS0R14HglGfb2Di6WK587FKuxfy3n6ez4";
 
-// --- 2. 상영관 데이터 (고정) ---
-// showtimes 는 API 로드 후 자동 생성됩니다
+// --- 2. 상영관 데이터 ---
+// nearbyTheaters: Google Places API 로 동적 로드
+let nearbyTheaters = [];
+
+// 하드코딩 theaters는 showtimes 생성용으로만 유지 (rank 매핑)
 const theaters = [
     { id: 101, name: "CGV 강남",        lat: 37.501, lng: 127.025, movieRanks: [1,2,5]  },
     { id: 102, name: "메가박스 코엑스",  lat: 37.512, lng: 127.058, movieRanks: [1,3,4]  },
@@ -22,10 +26,13 @@ const SHOWTIME_TEMPLATES = [
 ];
 
 // --- 3. 전역 상태 ---
-let movies = [];
+let movies = [];       // KOBIS TOP 10 (showtimes 포함)
+let allMovies = [];    // KOBIS TOP 10 + TMDB 현재 상영작 전체
+let displayLimit = 10; // 더보기용 표시 개수
 let userCoords   = { lat: 37.5665, lng: 126.9780 };
 let currentDistance = 3;
-let map;
+let map = null;          // Google Map 인스턴스
+let mapMarkers = [];     // 지도 마커 목록
 let minTime = 0;
 let maxTime = 1440;
 let selectedDates  = new Set();
@@ -96,6 +103,39 @@ async function fetchMovieData() {
         });
 
         movies = await Promise.all(moviePromises);
+
+        // TMDB 현재 상영작 추가 로드 (최대 3페이지 = 60편)
+        const kobisIds = new Set(movies.map(m => m.title));
+        const tmdbNowPages = await Promise.allSettled([1, 2, 3].map(page =>
+            fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=ko-KR&region=KR&page=${page}`)
+                .then(r => r.json())
+        ));
+
+        let extraId = 1000;
+        const extraMovies = [];
+        for (const result of tmdbNowPages) {
+            if (result.status !== 'fulfilled') continue;
+            for (const t of (result.value.results ?? [])) {
+                if (kobisIds.has(t.title)) continue; // 중복 제거
+                kobisIds.add(t.title);
+                extraMovies.push({
+                    id:        extraId++,
+                    rank:      null,
+                    title:     t.title,
+                    rating:    t.vote_average ? parseFloat(t.vote_average.toFixed(1)) : 'N/A',
+                    audience:  '-',
+                    seats:     250,
+                    seatsLeft: Math.floor(Math.random() * 200) + 20,
+                    poster:    t.poster_path
+                                 ? `https://image.tmdb.org/t/p/w500${t.poster_path}`
+                                 : 'https://via.placeholder.com/500x750?text=No+Image',
+                    showtimes: [] // 추가 영화는 상영시간 없음 → 필터 통과 처리
+                });
+            }
+        }
+
+        allMovies = [...movies, ...extraMovies];
+
         renderMain();
         initInfiniteSlider();
 
@@ -324,23 +364,94 @@ function setupTimeSlider() {
     syncFromRanges();
 }
 
-// --- 11. 지도 ---
+// --- 11. 지도 (Google Maps + Places API) ---
 function setupMap() {
-    if (map) { map.remove(); map = null; }
-    map = L.map('map', { zoomControl: false }).setView([userCoords.lat, userCoords.lng], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    L.marker([userCoords.lat, userCoords.lng]).addTo(map).bindPopup('📍 내 위치').openPopup();
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
 
-    theaters.forEach(t => {
-        if (getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng) <= 5) {
-            const marker = L.circleMarker([t.lat, t.lng], { color: '#e63946', radius: 6, fillColor: '#e63946', fillOpacity: 0.8 })
-                .addTo(map)
-                .bindPopup(`<b>🎬 ${t.name}</b><br><small style="color:#888">클릭하여 이 극장 영화 보기</small>`);
-            marker.on('click', () => {
-                showPage('search-page');
-                filterByTheater(t);
+    // Google Map 초기화
+    map = new google.maps.Map(mapEl, {
+        center: { lat: userCoords.lat, lng: userCoords.lng },
+        zoom: 14,
+        disableDefaultUI: true,
+        zoomControl: false,
+        styles: [
+            { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+            { featureType: 'transit', stylers: [{ visibility: 'simplified' }] }
+        ]
+    });
+
+    // 내 위치 마커 (파란 원 - 안정적인 SVG)
+    const userMarker = new google.maps.Marker({
+        position: { lat: userCoords.lat, lng: userCoords.lng },
+        map,
+        title: '내 위치',
+        icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" fill="#4285F4" stroke="white" stroke-width="3"/>
+                </svg>`),
+            scaledSize: new google.maps.Size(20, 20),
+            anchor: new google.maps.Point(10, 10)
+        },
+        zIndex: 999
+    });
+
+    // Places API 로 주변 영화관 검색
+    const service = new google.maps.places.PlacesService(map);
+    service.nearbySearch({
+        location: { lat: userCoords.lat, lng: userCoords.lng },
+        radius: 5000,
+        keyword: '영화관',
+        type: 'movie_theater'
+    }, (results, status) => {
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !results) return;
+
+        nearbyTheaters = results.map(p => ({
+            placeId:  p.place_id,
+            name:     p.name,
+            lat:      p.geometry.location.lat(),
+            lng:      p.geometry.location.lng(),
+            address:  p.vicinity || '',
+            rating:   p.rating || null,
+            open:     p.opening_hours?.open_now ?? null
+        }));
+
+        // 지도에 마커 추가
+        nearbyTheaters.forEach(t => {
+            const dist = getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng);
+            const marker = new google.maps.Marker({
+                position: { lat: t.lat, lng: t.lng },
+                map,
+                title: t.name,
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+                            <path d="M16 0C7.16 0 0 7.16 0 16c0 11 16 24 16 24s16-13 16-24C32 7.16 24.84 0 16 0z" fill="#e63946"/>
+                            <text x="16" y="20" text-anchor="middle" font-size="14" fill="white">🎬</text>
+                        </svg>`),
+                    scaledSize: new google.maps.Size(32, 40),
+                    anchor: new google.maps.Point(16, 40)
+                }
             });
-        }
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div style="font-family:'Apple SD Gothic Neo',sans-serif;padding:4px 2px;min-width:140px;">
+                        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">${t.name}</div>
+                        <div style="font-size:0.75rem;color:#888;margin-bottom:4px;">📍 ${dist.toFixed(1)}km</div>
+                        ${t.rating ? `<div style="font-size:0.75rem;color:#f57f17;">⭐ ${t.rating}</div>` : ''}
+                        ${t.open !== null ? `<div style="font-size:0.72rem;color:${t.open ? '#2e7d32' : '#c62828'};margin-top:3px;">${t.open ? '🟢 영업중' : '🔴 영업종료'}</div>` : ''}
+                    </div>`
+            });
+
+            marker.addListener('click', () => {
+                mapMarkers.forEach(m => m.iw?.close());
+                infoWindow.open(map, marker);
+            });
+
+            mapMarkers.push({ marker, iw: infoWindow, theater: t });
+        });
     });
 }
 
@@ -359,7 +470,7 @@ function filterByTheater(theater) {
     const theaterMovieIds = new Set(
         movies.flatMap(m => m.showtimes.filter(s => s.theaterId === theater.id).map(() => m.id))
     );
-    const filtered = movies.filter(m => theaterMovieIds.has(m.id));
+    const filtered = allMovies.filter(m => theaterMovieIds.has(m.id));
 
     titleEl.textContent = `📍 ${theater.name}`;
     countEl.textContent = `${filtered.length}편`;
@@ -373,9 +484,13 @@ function filterByTheater(theater) {
 
 // --- 14. 영화 카드 HTML ---
 function makeMovieItemHTML(m) {
+    const rankBadge = m.rank ? `<div class="rank-badge">🏆 ${m.rank}위</div>` : '';
     return `
     <div class="movie-item" onclick="viewDetail(${m.id})">
-        <img class="movie-item-poster" src="${m.poster}" alt="${m.title}">
+        <div class="movie-poster-wrap">
+            ${rankBadge}
+            <img class="movie-item-poster" src="${m.poster}" alt="${m.title}">
+        </div>
         <div class="movie-item-info">
             <div class="movie-item-title">${m.title}</div>
             <div class="movie-item-meta">
@@ -397,27 +512,39 @@ function makeMovieItemHTML(m) {
 }
 
 // --- 15. 영화 목록 표시 ---
-function displayMovies(keyword = '') {
+function displayMovies(keyword = '', resetLimit = true) {
     currentKeyword = keyword;
+    if (resetLimit) displayLimit = 10;
+
     const results = document.getElementById('search-results');
     const titleEl = document.getElementById('search-title');
     const countEl = document.getElementById('result-count');
 
-    let filtered = movies.filter(m => {
+    // 날짜·시간 필터가 활성화된 경우 showtimes 없는 영화는 제외, 아니면 전부 포함
+    const hasDateFilter = selectedDates.size > 0;
+    const hasTimeFilter = minTime !== 0 || maxTime !== 1440;
+    const useShowtimeFilter = hasDateFilter || hasTimeFilter;
+
+    let filtered = allMovies.filter(m => {
         if (keyword && !m.title.includes(keyword)) return false;
-        const matchShowtime = m.showtimes.some(s => {
-            const dateOk = selectedDates.size === 0 || selectedDates.has(s.date);
+        if (!useShowtimeFilter) return true; // 필터 없으면 전체 통과
+        if (m.showtimes.length === 0) return false; // 추가영화는 시간필터 시 제외
+        return m.showtimes.some(s => {
+            const dateOk = !hasDateFilter || selectedDates.has(s.date);
             const timeOk = s.times.some(t => {
                 const [h, min] = t.split(':').map(Number);
                 return (h * 60 + min) >= minTime && (h * 60 + min) <= maxTime;
             });
             return dateOk && timeOk;
         });
-        return matchShowtime;
     });
 
     if (currentSort === 'rating') {
-        filtered = [...filtered].sort((a, b) => b.rating - a.rating);
+        filtered = [...filtered].sort((a, b) => {
+            if (a.rating === 'N/A') return 1;
+            if (b.rating === 'N/A') return -1;
+            return b.rating - a.rating;
+        });
     } else if (currentSort === 'seats') {
         filtered = [...filtered].sort((a, b) => b.seatsLeft - a.seatsLeft);
     }
@@ -433,7 +560,31 @@ function displayMovies(keyword = '') {
         </div>`;
         return;
     }
-    results.innerHTML = filtered.map(m => makeMovieItemHTML(m)).join('');
+
+    const visible  = filtered.slice(0, displayLimit);
+    const hasMore  = filtered.length > displayLimit;
+
+    results.innerHTML = visible.map(m => makeMovieItemHTML(m)).join('');
+
+    // 더보기 버튼
+    if (hasMore) {
+        const remaining = filtered.length - displayLimit;
+        const moreBtn = document.createElement('div');
+        moreBtn.style.cssText = 'grid-column:1/-1;text-align:center;padding:10px 0 20px;';
+        moreBtn.innerHTML = `
+            <button id="load-more-btn" onclick="loadMore()">
+                더보기 <span class="more-count">${remaining}편 더 있음</span>
+            </button>`;
+        results.appendChild(moreBtn);
+    }
+}
+
+function loadMore() {
+    displayLimit += 10;
+    displayMovies(currentKeyword, false);
+    // 스크롤 유지 (새로 추가된 카드 위치로 부드럽게)
+    const btn = document.getElementById('load-more-btn');
+    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // --- 16. 필터 초기화 ---
@@ -441,6 +592,7 @@ function resetFilters() {
     const searchInput = document.getElementById('result-search-input');
     if (searchInput) searchInput.value = '';
     currentKeyword = '';
+    displayLimit = 10;
     selectedDates.clear();
     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('time-min').value       = 0;
@@ -466,7 +618,7 @@ function updateResetBtnState() {
 // --- 17. 상세 페이지 ---
 function viewDetail(movieId) {
     currentMovieId = movieId;
-    const movie = movies.find(m => m.id === movieId);
+    const movie = allMovies.find(m => m.id === movieId);
     if (!movie) return;
     showPage('detail-page');
 
@@ -483,44 +635,62 @@ function viewDetail(movieId) {
     renderTheaters(movieId);
 }
 
-// --- 18. 상영관 리스트 ---
+// --- 18. 상영관 리스트 (Google Places 기반) ---
 function renderTheaters(movieId) {
     const list  = document.getElementById('theater-list');
-    const movie = movies.find(m => m.id === movieId);
+    const movie = allMovies.find(m => m.id === movieId);
+    if (!movie) return;
 
-    const result = theaters.map((t, tIdx) => {
-        const dist = getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng);
-        const matchedTimes = [];
-        movie.showtimes
-            .filter(s => s.theaterId === t.id)
-            .filter(s => selectedDates.size === 0 || selectedDates.has(s.date))
-            .forEach(s => {
-                s.times.forEach(time => {
-                    const [h, min] = time.split(':').map(Number);
-                    const totalMins = h * 60 + min;
-                    if (totalMins >= minTime && totalMins <= maxTime) matchedTimes.push(time);
-                });
-            });
-        return { ...t, dist, matchedTimes };
-    })
-    .filter(t => t.dist <= currentDistance && t.matchedTimes.length > 0)
-    .sort((a, b) => a.dist - b.dist);
+    // nearbyTheaters 가 아직 로드 안 됐을 때
+    if (nearbyTheaters.length === 0) {
+        list.innerHTML = `
+            <div class="no-theater">
+                <div class="no-icon">🗺️</div>
+                <div>주변 상영관을 불러오는 중입니다...</div>
+                <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">위치 권한을 허용했는지 확인해주세요</div>
+            </div>`;
+        // 2초 후 재시도
+        setTimeout(() => { if (currentMovieId === movieId) renderTheaters(movieId); }, 2000);
+        return;
+    }
+
+    // 거리 계산 + currentDistance 필터 + 정렬
+    const result = nearbyTheaters
+        .map(t => ({
+            ...t,
+            dist: getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng)
+        }))
+        .filter(t => t.dist <= currentDistance)
+        .sort((a, b) => a.dist - b.dist);
 
     if (result.length === 0) {
-        list.innerHTML = `<div class="no-theater"><div class="no-icon">😶</div>조건에 맞는 상영관이 없습니다.</div>`;
+        list.innerHTML = `
+            <div class="no-theater">
+                <div class="no-icon">😶</div>
+                <div>${currentDistance}km 이내 상영관이 없습니다</div>
+                <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">거리 범위를 늘려보세요</div>
+            </div>`;
         return;
     }
 
     list.innerHTML = result.map(t => {
-        const timesHTML = [...new Set(t.matchedTimes)].map(ti => `<span class="time-badge">${ti}</span>`).join('');
+        const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
         return `
         <div class="theater-item">
-            <div>
+            <div class="theater-info">
                 <div class="theater-name">${t.name}</div>
-                <div class="theater-dist">📍 ${t.dist.toFixed(1)}km</div>
-                <div class="theater-times">${timesHTML}</div>
+                <div class="theater-meta-row">
+                    <span class="theater-dist">📍 ${t.dist.toFixed(1)}km</span>
+                    ${t.rating ? `<span class="theater-rating">⭐ ${t.rating}</span>` : ''}
+                    ${t.open !== null
+                        ? `<span class="theater-open ${t.open ? 'open' : 'closed'}">${t.open ? '영업중' : '영업종료'}</span>`
+                        : ''}
+                </div>
+                <div class="theater-address">${t.address}</div>
             </div>
-            <button class="timetable-btn" onclick="alert('${t.name} 시간표')">시간표 보기 →</button>
+            <a class="timetable-btn" href="${googleMapUrl}" target="_blank" rel="noopener">
+                지도 보기 →
+            </a>
         </div>`;
     }).join('');
 }

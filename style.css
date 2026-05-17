@@ -86,11 +86,15 @@ header {
     overflow: hidden;
     border: 2px solid #ddd;
     flex-shrink: 0;
+    position: relative;
 }
 
 #map {
     width: 100%;
     height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 /* 인기 영화 섹션 */
@@ -789,46 +793,79 @@ header {
     align-items: center;
     padding: 18px 20px;
     border: 1px solid #eee;
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 10px;
     transition: all 0.15s;
+    gap: 12px;
 }
 
     .theater-item:hover {
         background: #fafafa;
         border-color: #ccc;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     }
+
+.theater-info {
+    flex: 1;
+    min-width: 0;
+}
 
 .theater-name {
     font-weight: 700;
     font-size: 1rem;
-    margin-bottom: 3px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.theater-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
 }
 
 .theater-dist {
     font-size: 0.76rem;
     color: #e63946;
     font-weight: 600;
-    margin-bottom: 8px;
 }
 
-.theater-times {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+.theater-rating {
+    font-size: 0.75rem;
+    color: #f57f17;
+    font-weight: 600;
 }
 
-.time-badge {
-    background: #f5f5f5;
-    color: #555;
+.theater-open {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+    .theater-open.open {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .theater-open.closed {
+        background: #fce4ec;
+        color: #c62828;
+    }
+
+.theater-address {
     font-size: 0.74rem;
-    padding: 3px 10px;
-    border-radius: 5px;
-    font-weight: 500;
-    border: 1px solid #eee;
+    color: #bbb;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .timetable-btn {
+    display: inline-block;
     background: #fff;
     border: 1.5px solid #ddd;
     color: #555;
@@ -840,11 +877,13 @@ header {
     transition: all 0.15s;
     white-space: nowrap;
     flex-shrink: 0;
+    text-decoration: none;
 }
 
     .timetable-btn:hover {
-        border-color: #333;
-        color: #333;
+        border-color: #e63946;
+        color: #e63946;
+        background: #fff5f5;
     }
 
 .no-theater {
@@ -868,4 +907,56 @@ header {
 ::-webkit-scrollbar-thumb {
     background: #ddd;
     border-radius: 4px;
+}
+
+/* 더보기 버튼 */
+#load-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 30px;
+    background: #fff;
+    border: 2px solid #333;
+    color: #333;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    font-weight: 700;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+    #load-more-btn:hover {
+        background: #333;
+        color: #fff;
+    }
+
+    #load-more-btn .more-count {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: #aaa;
+        transition: color 0.2s;
+    }
+
+    #load-more-btn:hover .more-count {
+        color: #ccc;
+    }
+
+/* 순위 배지 */
+.movie-poster-wrap {
+    position: relative;
+}
+
+.rank-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(230, 57, 70, 0.92);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    backdrop-filter: blur(2px);
+    z-index: 1;
 }
