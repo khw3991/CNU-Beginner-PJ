@@ -9,10 +9,24 @@
     padding: 0;
 }
 
+@font-face {
+    font-family: 'Paperozi';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2');
+    font-weight : 700;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Paperozi';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2');
+    font-weight : 800;
+    font-display: swap;
+}
+
 body {
-    font-family: 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
+    font-family: 'Paperozi', 'Pretendard', 'Apple SD Gothic Neo', sans-serif;
     background: #fff;
-    color: #333;
+    color: #032C30;
 }
 
 .hidden {
@@ -28,16 +42,18 @@ header {
     gap: 20px;
     position: sticky;
     top: 0;
-    background: #fff;
+    background: #02494D;
     z-index: 100;
 }
 
 #logo {
+    font-family: 'paperozi';
     font-size: 1.5rem;
     font-weight: 800;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
+    color : #e7f2ee;
 }
 
     #logo .logo-icon {
@@ -49,7 +65,7 @@ header {
     gap: 6px;
     align-items: center;
     font-size: 0.8rem;
-    color: #aaa;
+    color: #B2CEC2;
 }
 
     #breadcrumb .crumb {
@@ -58,7 +74,7 @@ header {
     }
 
         #breadcrumb .crumb:hover {
-            color: #333;
+            color: #032C30;
             text-decoration: underline;
         }
 
@@ -74,8 +90,8 @@ header {
     gap: 30px;
     padding: 40px 40px 20px;
     max-width: 1100px;
-    margin: 0 auto;
-    align-items: flex-start;
+    margin: 50px auto;
+    align-items: stretch; /* 기존 flex-start에서 stretch로 변경 */
 }
 
 /* 지도 */
@@ -103,86 +119,109 @@ header {
     min-width: 0; /* 슬라이더가 부모 뚫는 현상 방지 */
     display: flex;
     flex-direction: column;
+    
+    /* ── 이 부분을 100%에서 320px로 수정! ── */
+    height: 320px; 
 }
 
 .section-title {
-    font-size: 1.05rem;
+    font-size: 1.4rem;
     font-weight: 700;
-    margin-bottom: 16px;
+    margin-bottom: 3px;
     flex-shrink: 0;
+    text-align: right;
+    padding : 5px 0;
 }
 
 /* 슬라이더 뷰포트 — 넘치는 카드 숨김 */
 .slider-viewport {
-    overflow: hidden;
+    flex: 1;        /* 제목을 제외한 나머지 높이를 꽉 채움 (지도의 높이와 같아짐) */
+    overflow: hidden; 
+    position: relative;
+    border-radius: 12px;
     width: 100%;
-    border-radius: 10px;
 }
 
-/* 카드 행 — 무한루프용 transform 으로 이동 */
+/* 카드 행 */
 .movie-row {
     display: flex;
     gap: 14px;
-    /* width 는 JS 가 max-content 로 채움 */
+    height: 100%;   /* 부모(뷰포트)의 높이를 그대로 이어받음 */
     will-change: transform;
 }
 
 /* 개별 카드 */
 .movie-card-mini {
-    width: 110px;
+    width: 150px;       /* [수정] 명확한 가로 폭을 주어 겹침 현상과 자바스크립트 계산 오류 완벽 해결 */
+    height: 100%;       /* 세로 높이는 미니맵과 똑같이 꽉 채움 */
+    display: flex;
+    flex-direction: column; 
+    align-items: center;    
     flex-shrink: 0;
     text-align: center;
     cursor: pointer;
     transition: transform 0.15s;
 }
+.movie-card-mini:hover {
+    transform: translateY(-4px);
+}
 
-    .movie-card-mini:hover {
-        transform: translateY(-4px);
-    }
+/* 영화 포스터 이미지 */
+.movie-card-mini img {
+    width: 100%;        /* 카드가 가진 가로 폭을 꽉 채움 */
+    flex: 1;            /* 순위와 제목을 제외한 남은 세로 공간을 전부 차지 */
+    min-height: 0;      /* 플렉스 박스 안에서 이미지가 터지는 현상 방지 */
+    object-fit: cover;  /* 비율이 살짝 바뀌어도 포스터가 찌그러지지 않고 이쁘게 잘림 */
+    border-radius: 8px;
+    border: 1px solid #eee;
+    display: block;
+}
 
-    .movie-card-mini img {
-        width: 100%;
-        aspect-ratio: 2 / 3;
-        object-fit: cover;
-        border-radius: 8px;
-        border: 1px solid #eee;
-        display: block;
-    }
+/* 순위 텍스트 */
+.movie-card-mini .rank {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #4e6866;
+    margin-top: 6px;    /* 이미지와의 간격 확보 */
+    margin-bottom: 4px;
+    flex-shrink: 0; 
+    width: 100%;        /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-    .movie-card-mini .rank {
-        font-size: 0.72rem;
-        font-weight: 700;
-        color: #e63946;
-        margin-bottom: 5px;
-    }
+/* 영화 제목 텍스트 */
+.movie-card-mini p {
+    font-size: 0.76rem;
+    color: #555;
+    margin-top: 4px;
+    flex-shrink: 0; 
+    width: 100%;        /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-    .movie-card-mini p {
-        font-size: 0.76rem;
-        color: #555;
-        margin-top: 6px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+/* 스켈레톤 로딩 (데이터를 가져오기 전 레이아웃) */
+.movie-card-mini.skeleton .skeleton-img {
+    width: 100%;          
+    flex: 1;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
 
-    /* 스켈레톤 로딩 */
-    .movie-card-mini.skeleton .skeleton-img {
-        width: 100%;
-        aspect-ratio: 2 / 3;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.4s infinite;
-    }
-
-    .movie-card-mini.skeleton .skeleton-text {
-        height: 12px;
-        border-radius: 4px;
-        margin-top: 8px;
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.4s infinite;
-    }
+.movie-card-mini.skeleton .skeleton-text {
+    height: 12px;
+    border-radius: 4px;
+    margin-top: 10px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    width: 80%;         /* 텍스트 바가 너무 꽉 차지 않게 조절 */
+}
 
 @keyframes shimmer {
     0% {
@@ -197,11 +236,14 @@ header {
 /* 검색창 (메인) */
 .search-section {
     text-align: center;
-    padding: 36px 40px 60px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 14px;
+    max-width: 1100px;
+    margin: 50px auto;
+    padding: 0 40px;
 }
 
 .search-bar-wrap {
@@ -212,7 +254,7 @@ header {
 
 #search-input {
     flex: 1;
-    padding: 13px 18px;
+    padding: 15px 18px;
     border: 2px solid #ddd;
     border-right: none;
     border-radius: 8px 0 0 8px;
@@ -227,9 +269,9 @@ header {
     }
 
 #search-btn {
-    padding: 13px 22px;
-    background: #333;
-    color: #fff;
+    padding: 15px 22px;
+    background: #022B2F;
+    color: #e7f2ee;
     border: none;
     border-radius: 0 8px 8px 0;
     cursor: pointer;
@@ -239,13 +281,13 @@ header {
 }
 
     #search-btn:hover {
-        background: #000;
+        background: #02494D;
     }
 
 #discover-btn {
-    padding: 11px 26px;
-    background: #fff;
-    color: #333;
+    padding: 13px 26px;
+    background: #022B2F;
+    color: #e7f2ee;
     border: 2px solid #333;
     border-radius: 8px;
     cursor: pointer;
@@ -259,8 +301,8 @@ header {
 }
 
     #discover-btn:hover {
-        background: #333;
-        color: #fff;
+        background: #02494D;
+        color: #e7f2ee;
     }
 
 /* ══════════════════════════════════════
@@ -308,8 +350,8 @@ header {
 
 #result-search-btn {
     padding: 9px 14px;
-    background: #333;
-    color: #fff;
+    background: #022B2F;
+    color: #e7f2ee;
     border: none;
     border-radius: 0 6px 6px 0;
     cursor: pointer;
@@ -916,8 +958,8 @@ header {
     gap: 8px;
     padding: 12px 30px;
     background: #fff;
-    border: 2px solid #333;
-    color: #333;
+    border: 2px solid #032C30;
+    color: #032C30;
     border-radius: 30px;
     cursor: pointer;
     font-size: 0.92rem;
@@ -927,7 +969,7 @@ header {
 }
 
     #load-more-btn:hover {
-        background: #333;
+        background: #032C30;
         color: #fff;
     }
 

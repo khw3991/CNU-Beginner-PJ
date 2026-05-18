@@ -9,7 +9,7 @@
 <body>
 
     <header>
-        <h1 id="logo"><span class="logo-icon">🎬</span> QuickMovie</h1>
+        <h1 id="logo"><span class="logo-icon">🐛</span> Mopik 모픽 ┃ 모든 영화를 한눈에 pick!</h1>
         <nav id="breadcrumb"></nav>
     </header>
 
@@ -22,7 +22,7 @@
                     <div id="map"></div>
                 </div>
                 <div class="popular-section">
-                    <h2 class="section-title">현재 인기 영화 TOP 10</h2>
+                    <h2 class="section-title">━━━━━━━━━━━━━━━━━━━━    현재 인기 영화 TOP 10</h2>
                     <!-- 슬라이더 뷰포트: 넘치는 카드는 숨김 -->
                     <div class="slider-viewport">
                         <div id="popular-list" class="movie-row"></div>
@@ -30,11 +30,11 @@
                 </div>
             </div>
             <div class="search-section">
+                <button id="discover-btn">🎲 지금 볼 영화 찾기</button>
                 <div class="search-bar-wrap">
                     <input type="text" id="search-input" placeholder="보고 싶은 영화를 검색하세요...">
                     <button id="search-btn">검색</button>
                 </div>
-                <button id="discover-btn">🎲 지금 볼 영화 찾기</button>
             </div>
         </section>
 
@@ -90,7 +90,6 @@
                     <div class="sort-btns">
                         <button class="sort-btn active" data-sort="default">등록순</button>
                         <button class="sort-btn" data-sort="rating">평점순</button>
-                        <button class="sort-btn" data-sort="seats">좌석순</button>
                     </div>
                 </div>
                 <div id="search-results" class="movie-grid"></div>

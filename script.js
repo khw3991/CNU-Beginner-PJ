@@ -178,16 +178,20 @@ function initInfiniteSlider() {
     clonesBefore.forEach(c => list.appendChild(c)); // 앞 복제 (실제론 뒤에 DOM 순서로)
     // 실제로 원본을 중앙에, 복제를 앞뒤로
 
-    // DOM 초기화
+   // DOM 초기화 및 카드 삽입 완료 후
     list.innerHTML = '';
     [...clonesBefore, ...origCards, ...clonesAfter].forEach(c => list.appendChild(c));
 
-    const CARD_WIDTH = 124; // card width(110) + gap(14)
+    // 화면에 실제로 그려진 첫 번째 카드의 가로 폭을 소수점까지 정확하게 측정해옴
+    const firstCard = list.firstElementChild;
+    const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 110;
+    const CARD_WIDTH = cardWidth + 14; // 실제 카드 폭 + gap(14)
+
     const total      = movies.length;
     let   index      = total; // 원본 시작 인덱스
     let   isTransitioning = false;
 
-    // 초기 위치: 복제(앞) 다음인 원본 0번 카드
+    // 초기 위치 설정
     list.style.transition = 'none';
     list.style.transform  = `translateX(-${index * CARD_WIDTH}px)`;
 
@@ -502,10 +506,6 @@ function makeMovieItemHTML(m) {
                     <span class="meta-label">👥 관객</span>
                     <span class="meta-value">${m.audience}</span>
                 </div>
-                <div class="meta-row">
-                    <span class="meta-label">💺 좌석</span>
-                    ${getSeatBadge(m)}
-                </div>
             </div>
         </div>
     </div>`;
@@ -514,7 +514,7 @@ function makeMovieItemHTML(m) {
 // --- 15. 영화 목록 표시 ---
 function displayMovies(keyword = '', resetLimit = true) {
     currentKeyword = keyword;
-    if (resetLimit) displayLimit = 10;
+    if (resetLimit) displayLimit = 12;
 
     const results = document.getElementById('search-results');
     const titleEl = document.getElementById('search-title');
@@ -580,7 +580,7 @@ function displayMovies(keyword = '', resetLimit = true) {
 }
 
 function loadMore() {
-    displayLimit += 10;
+    displayLimit += 12;
     displayMovies(currentKeyword, false);
     // 스크롤 유지 (새로 추가된 카드 위치로 부드럽게)
     const btn = document.getElementById('load-more-btn');
@@ -592,7 +592,7 @@ function resetFilters() {
     const searchInput = document.getElementById('result-search-input');
     if (searchInput) searchInput.value = '';
     currentKeyword = '';
-    displayLimit = 10;
+    displayLimit = 12;
     selectedDates.clear();
     document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('time-min').value       = 0;
@@ -666,7 +666,7 @@ function renderTheaters(movieId) {
     if (result.length === 0) {
         list.innerHTML = `
             <div class="no-theater">
-                <div class="no-icon">😶</div>
+                <div class="no-icon">😭</div>
                 <div>${currentDistance}km 이내 상영관이 없습니다</div>
                 <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">거리 범위를 늘려보세요</div>
             </div>`;
@@ -701,7 +701,7 @@ function setBreadcrumb(crumbs) {
     if (!nav) return;
     nav.innerHTML = crumbs.map((c, i) => {
         const sep = i > 0 ? '<span class="sep">›</span>' : '';
-        if (!c.page) return `${sep}<span class="crumb" style="color:#333">${c.label}</span>`;
+        if (!c.page) return `${sep}<span class="crumb" style="color:#D4E7E1">${c.label}</span>`;
         return `${sep}<span class="crumb" onclick="showPage('${c.page}')">${c.label}</span>`;
     }).join('');
 }
