@@ -655,7 +655,7 @@ function renderTheaters(movieId) {
     }
 
     // 거리 계산 + currentDistance 필터 + 정렬
-    const result = nearbyTheaters
+    const filteredTheaters = nearbyTheaters
         .map(t => ({
             ...t,
             dist: getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng)
@@ -663,7 +663,7 @@ function renderTheaters(movieId) {
         .filter(t => t.dist <= currentDistance)
         .sort((a, b) => a.dist - b.dist);
 
-    if (result.length === 0) {
+    if (filteredTheaters.length === 0) {
         list.innerHTML = `
             <div class="no-theater">
                 <div class="no-icon">😭</div>
@@ -673,7 +673,7 @@ function renderTheaters(movieId) {
         return;
     }
 
-    list.innerHTML = result.map(t => {
+    /*list.innerHTML = result.map(t => {
         const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
         return `
         <div class="theater-item">
@@ -693,6 +693,60 @@ function renderTheaters(movieId) {
             </a>
         </div>`;
     }).join('');
+    */
+   list.innerHTML = filteredTheaters.map((t, idx) => {
+        
+        // 영화 ID와 극장 index를 기반으로 가짜 상영시간 배열 만들기
+        // 네이버 예매 화면처럼 여러 개의 시간 버튼을 나열하기 위함
+        const baseHour = 10 + (movieId % 5) + (idx % 3); 
+        const fakeTimes = [
+            `${baseHour}:00`,
+            `${baseHour + 2}:30`,
+            `${baseHour + 5}:10`,
+            `${baseHour + 7}:45`
+        ].filter(time => {
+            // 시간 슬라이더(minTime, maxTime) 필터 연동
+            const [h, m] = time.split(':').map(Number);
+            const totalMins = h * 60 + m;
+            return totalMins >= minTime && totalMins <= maxTime;
+        });
+
+        // 만약 필터링된 상영 시간이 없다면 이 극장은 표시하지 않거나 패스
+        if (fakeTimes.length === 0) return '';
+
+        // 네이버 예매 화면 스타일의 시간 버튼 HTML 생성
+        const timeButtonsHTML = fakeTimes.map(time => {
+            const [h, m] = time.split(':').map(Number);
+            // 대략 2시간 뒤 종료되도록 계산
+            const endHour = m + 120 >= 1440 ? 24 : h + 2; 
+            const endMin = String((m + 20) % 60).padStart(2, '0');
+            
+            return `
+                <button class="time-slot-btn" onclick="alert('${t.name} ${time} 예매 페이지로 이동합니다.')">
+                    <span class="start-time">${time}</span>
+                    <span class="end-time">~${endHour}:${endMin}</span>
+                    <span class="hall-info">${(idx % 3) + 1}관 층</span>
+                </button>
+            `;
+        }).join('');
+
+        const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
+        
+        return `
+        <div class="theater-schedule-box">
+            <div class="theater-header">
+                <div class="theater-name-wrapper">
+                    <span class="theater-name">${t.name}</span>
+                    <span class="theater-dist">📍 ${t.dist.toFixed(1)}km</span>
+                </div>
+                <a class="map-link-btn" href="${googleMapUrl}" target="_blank" rel="noopener">지도보기 ↗</a>
+            </div>
+            <div class="time-slots-container">
+                ${timeButtonsHTML}
+            </div>
+        </div>`;
+   }).join('');
+
 }
 
 // --- 19. 브레드크럼 ---
