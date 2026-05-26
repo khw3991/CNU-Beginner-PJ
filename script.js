@@ -25,6 +25,29 @@ const SHOWTIME_TEMPLATES = [
     ["14:00","17:00","20:00","22:30"]
 ];
 
+// 모든 영화에 fake showtimes 생성 (movieId 기반으로 결정론적으로)
+function generateFakeShowtimes(movieId) {
+    const showtimes = [];
+    // movieId 기반으로 어떤 극장 index 패턴을 쓸지 결정 (1~3개 극장)
+    const numTheaters = (movieId % 3) + 1;
+    for (let tIdx = 0; tIdx < numTheaters; tIdx++) {
+        const theaterOffset = (movieId + tIdx * 7) % SHOWTIME_TEMPLATES.length;
+        for (let dayOff = 0; dayOff < 7; dayOff++) {
+            const times = SHOWTIME_TEMPLATES[theaterOffset].filter((_, i) =>
+                (i + dayOff + movieId) % 2 === 0 || dayOff === 0
+            );
+            if (times.length > 0) {
+                showtimes.push({
+                    date: dateKey(dayOff),
+                    theaterIdx: tIdx,
+                    times
+                });
+            }
+        }
+    }
+    return showtimes;
+}
+
 // --- 3. 전역 상태 ---
 let movies = [];       // KOBIS TOP 10 (showtimes 포함)
 let allMovies = [];    // KOBIS TOP 10 + TMDB 현재 상영작 전체
@@ -39,6 +62,11 @@ let selectedDates  = new Set();
 let currentMovieId = null;
 let currentSort    = 'default';
 let currentKeyword = '';
+
+// 상세 페이지 전용 필터 상태
+let detailSelectedDates = new Set();
+let detailMinTime = 0;
+let detailMaxTime = 1440;
 
 const DAY_NAMES = ['일','월','화','수','목','금','토'];
 
@@ -98,7 +126,7 @@ async function fetchMovieData() {
                 poster:   info?.poster_path
                             ? `https://image.tmdb.org/t/p/w500${info.poster_path}`
                             : 'https://via.placeholder.com/500x750?text=No+Image',
-                showtimes
+                showtimes: generateFakeShowtimes(rank)
             };
         });
 
@@ -129,7 +157,7 @@ async function fetchMovieData() {
                     poster:    t.poster_path
                                  ? `https://image.tmdb.org/t/p/w500${t.poster_path}`
                                  : 'https://via.placeholder.com/500x750?text=No+Image',
-                    showtimes: [] // 추가 영화는 상영시간 없음 → 필터 통과 처리
+                    showtimes: generateFakeShowtimes(extraId)
                 });
             }
         }
@@ -528,10 +556,9 @@ function displayMovies(keyword = '', resetLimit = true) {
     let filtered = allMovies.filter(m => {
         if (keyword && !m.title.includes(keyword)) return false;
         if (!useShowtimeFilter) return true; // 필터 없으면 전체 통과
-        if (m.showtimes.length === 0) return false; // 추가영화는 시간필터 시 제외
         return m.showtimes.some(s => {
             const dateOk = !hasDateFilter || selectedDates.has(s.date);
-            const timeOk = s.times.some(t => {
+            const timeOk = !hasTimeFilter || s.times.some(t => {
                 const [h, min] = t.split(':').map(Number);
                 return (h * 60 + min) >= minTime && (h * 60 + min) <= maxTime;
             });
@@ -627,12 +654,165 @@ function viewDetail(movieId) {
     document.getElementById('detail-rating').textContent   = `⭐ ${movie.rating}`;
     document.getElementById('detail-audience').textContent = `👥 관객 ${movie.audience}`;
 
+    // 상세 페이지 필터 초기화
+    detailSelectedDates = new Set();
+    detailMinTime = 0;
+    detailMaxTime = 1440;
+
     setBreadcrumb([
         { label: '홈',   page: 'main-page'   },
         { label: '검색', page: 'search-page' },
         { label: movie.title, page: null }
     ]);
+
+    renderDetailFilters(movieId);
     renderTheaters(movieId);
+}
+
+// 상세 페이지 날짜·시간 필터 UI 렌더
+function renderDetailFilters(movieId) {
+    const container = document.getElementById('detail-filter-area');
+    if (!container) return;
+
+    // 날짜 버튼 HTML
+    const today = new Date();
+    const dateBtnsHTML = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(today.getDate() + i);
+        const dayIdx  = d.getDay();
+        const dayName = DAY_NAMES[dayIdx];
+        const dayNum  = d.getDate();
+        const key     = `${d.getMonth()+1}-${dayNum}`;
+        const sunClass = dayIdx === 0 ? ' sunday' : dayIdx === 6 ? ' saturday' : '';
+        return `<button class="date-btn detail-date-btn${sunClass}" data-key="${key}">
+            <span class="day-name">${dayName}</span>${dayNum}
+        </button>`;
+    }).join('');
+
+    container.innerHTML = `
+        <div class="detail-filter-bar">
+            <div class="detail-filter-header">
+                <span class="topbar-label" style="font-size:0.8rem;color:#555;">상영 일정 필터</span>
+                <button id="detail-reset-btn">✕ 초기화</button>
+            </div>
+            <div class="detail-filter-row">
+                <span class="topbar-label">날짜 <small>(없으면 전체)</small></span>
+                <div class="date-picker-row" id="detail-date-buttons">${dateBtnsHTML}</div>
+            </div>
+            <div class="detail-filter-row">
+                <span class="topbar-label">시간 범위</span>
+                <div class="time-range-wrap">
+                    <div class="dual-range-container">
+                        <input type="range" id="detail-time-min" min="0" max="1440" value="0" step="10">
+                        <input type="range" id="detail-time-max" min="0" max="1440" value="1440" step="10">
+                        <div class="slider-track" id="detail-slider-track"></div>
+                    </div>
+                    <div class="time-range-display">
+                        <input type="text" id="detail-time-min-input" class="time-text-input" value="00:00" maxlength="5">
+                        <span class="time-tilde">~</span>
+                        <input type="text" id="detail-time-max-input" class="time-text-input" value="24:00" maxlength="5">
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    // 날짜 버튼 이벤트
+    document.querySelectorAll('.detail-date-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            if (detailSelectedDates.has(key)) {
+                detailSelectedDates.delete(key);
+                btn.classList.remove('active');
+            } else {
+                detailSelectedDates.add(key);
+                btn.classList.add('active');
+            }
+            renderTheaters(movieId);
+        });
+    });
+
+    // 시간 슬라이더 설정
+    setupDetailTimeSlider(movieId);
+
+    // 초기화 버튼
+    document.getElementById('detail-reset-btn')?.addEventListener('click', () => {
+        detailSelectedDates = new Set();
+        detailMinTime = 0;
+        detailMaxTime = 1440;
+        document.querySelectorAll('.detail-date-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('detail-time-min').value = 0;
+        document.getElementById('detail-time-max').value = 1440;
+        document.getElementById('detail-time-min-input').value = '00:00';
+        document.getElementById('detail-time-max-input').value = '24:00';
+        const track = document.getElementById('detail-slider-track');
+        if (track) track.style.background = '#ddd';
+        renderTheaters(movieId);
+    });
+}
+
+function setupDetailTimeSlider(movieId) {
+    const minRange = document.getElementById('detail-time-min');
+    const maxRange = document.getElementById('detail-time-max');
+    const minInput = document.getElementById('detail-time-min-input');
+    const maxInput = document.getElementById('detail-time-max-input');
+    const track    = document.getElementById('detail-slider-track');
+    if (!minRange || !maxRange) return;
+
+    function updateTrack(lo, hi) {
+        const loPct = (lo / 1440) * 100;
+        const hiPct = (hi / 1440) * 100;
+        track.style.background = `linear-gradient(to right, #ddd ${loPct}%, #333 ${loPct}%, #333 ${hiPct}%, #ddd ${hiPct}%)`;
+    }
+
+    function syncFromRanges() {
+        let lo = parseInt(minRange.value);
+        let hi = parseInt(maxRange.value);
+        if (lo > hi) {
+            if (document.activeElement === minRange) { maxRange.value = lo; hi = lo; }
+            else { minRange.value = hi; lo = hi; }
+        }
+        minInput.value = minsToStr(lo);
+        maxInput.value = minsToStr(hi);
+        minInput.classList.remove('error');
+        maxInput.classList.remove('error');
+        updateTrack(lo, hi);
+        detailMinTime = lo;
+        detailMaxTime = hi;
+        renderTheaters(movieId);
+    }
+
+    function syncFromTextInput(which) {
+        const input = which === 'min' ? minInput : maxInput;
+        const val   = strToMins(input.value);
+        if (val === null) { input.classList.add('error'); return; }
+        input.classList.remove('error');
+        const snapped = Math.round(val / 10) * 10;
+        const clamped = Math.max(0, Math.min(1440, snapped));
+        if (which === 'min') {
+            const hi = parseInt(maxRange.value);
+            const finalLo = Math.min(clamped, hi);
+            minRange.value = finalLo;
+            minInput.value = minsToStr(finalLo);
+            detailMinTime = finalLo;
+        } else {
+            const lo = parseInt(minRange.value);
+            const finalHi = Math.max(clamped, lo);
+            maxRange.value = finalHi;
+            maxInput.value = minsToStr(finalHi);
+            detailMaxTime = finalHi;
+        }
+        updateTrack(parseInt(minRange.value), parseInt(maxRange.value));
+        renderTheaters(movieId);
+    }
+
+    minRange.addEventListener('input', syncFromRanges);
+    maxRange.addEventListener('input', syncFromRanges);
+    ['min', 'max'].forEach(which => {
+        const el = which === 'min' ? minInput : maxInput;
+        el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); syncFromTextInput(which); el.blur(); } });
+        el.addEventListener('blur', () => syncFromTextInput(which));
+    });
+    syncFromRanges();
 }
 
 // --- 18. 상영관 리스트 (Google Places 기반) ---
@@ -649,7 +829,6 @@ function renderTheaters(movieId) {
                 <div>주변 상영관을 불러오는 중입니다...</div>
                 <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">위치 권한을 허용했는지 확인해주세요</div>
             </div>`;
-        // 2초 후 재시도
         setTimeout(() => { if (currentMovieId === movieId) renderTheaters(movieId); }, 2000);
         return;
     }
@@ -673,65 +852,75 @@ function renderTheaters(movieId) {
         return;
     }
 
-    /*list.innerHTML = result.map(t => {
+    const hasDetailDateFilter = detailSelectedDates.size > 0;
+    const hasDetailTimeFilter = detailMinTime !== 0 || detailMaxTime !== 1440;
+
+    // dateKey → 날짜 라벨 맵 (오늘~6일 후)
+    const dateLabels = {};
+    for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const key = `${d.getMonth()+1}-${d.getDate()}`;
+        const dayName = DAY_NAMES[d.getDay()];
+        dateLabels[key] = `${d.getMonth()+1}/${d.getDate()} (${dayName})`;
+    }
+
+    // 날짜별로 시간을 묶어서 반환 — [{date, label, times}, ...]
+    const getScheduleByDate = () => {
+        // 어떤 날짜 키를 보여줄지 결정
+        const targetDates = hasDetailDateFilter
+            ? [...detailSelectedDates].sort()
+            : Object.keys(dateLabels).sort((a, b) => {
+                const [am, ad] = a.split('-').map(Number);
+                const [bm, bd] = b.split('-').map(Number);
+                return am !== bm ? am - bm : ad - bd;
+            });
+
+        return targetDates.map(dateKey => {
+            // 해당 날짜의 showtimes에서 시간 필터 적용
+            const timesForDate = new Set();
+            movie.showtimes.forEach(s => {
+                if (s.date !== dateKey) return;
+                s.times.forEach(t => {
+                    const [h, m] = t.split(':').map(Number);
+                    const totalMins = h * 60 + m;
+                    if (totalMins >= detailMinTime && totalMins <= detailMaxTime) {
+                        timesForDate.add(t);
+                    }
+                });
+            });
+            // 시간 오름차순 정렬
+            const sorted = [...timesForDate].sort((a, b) => {
+                const [ah, am] = a.split(':').map(Number);
+                const [bh, bm] = b.split(':').map(Number);
+                return (ah * 60 + am) - (bh * 60 + bm);
+            });
+            return { dateKey, label: dateLabels[dateKey] || dateKey, times: sorted };
+        }).filter(d => d.times.length > 0);
+    };
+
+    const rows = filteredTheaters.map((t, idx) => {
+        const schedule = getScheduleByDate();
+        if (schedule.length === 0) return '';
+
+        const allTimeButtonsHTML = schedule.map(({ label, times }) =>
+            times.map(time => {
+                const [h, m] = time.split(':').map(Number);
+                const endHour = m + 120 >= 1440 ? 24 : h + 2;
+                const endMin  = String((m + 20) % 60).padStart(2, '0');
+                return `
+                    <button class="time-slot-btn" onclick="alert('${t.name} ${label} ${time} 예매 페이지로 이동합니다.')">
+                        <span class="slot-date">${label}</span>
+                        <span class="start-time">${time}</span>
+                        <span class="end-time">~${endHour}:${endMin}</span>
+                        <span class="hall-info">${(idx % 3) + 1}관</span>
+                    </button>`;
+            }).join('')
+        ).join('');
+
+        const scheduleSectionsHTML = `<div class="time-slots-container">${allTimeButtonsHTML}</div>`;
+
         const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
-        return `
-        <div class="theater-item">
-            <div class="theater-info">
-                <div class="theater-name">${t.name}</div>
-                <div class="theater-meta-row">
-                    <span class="theater-dist">📍 ${t.dist.toFixed(1)}km</span>
-                    ${t.rating ? `<span class="theater-rating">⭐ ${t.rating}</span>` : ''}
-                    ${t.open !== null
-                        ? `<span class="theater-open ${t.open ? 'open' : 'closed'}">${t.open ? '영업중' : '영업종료'}</span>`
-                        : ''}
-                </div>
-                <div class="theater-address">${t.address}</div>
-            </div>
-            <a class="timetable-btn" href="${googleMapUrl}" target="_blank" rel="noopener">
-                지도 보기 →
-            </a>
-        </div>`;
-    }).join('');
-    */
-   list.innerHTML = filteredTheaters.map((t, idx) => {
-        
-        // 영화 ID와 극장 index를 기반으로 가짜 상영시간 배열 만들기
-        // 네이버 예매 화면처럼 여러 개의 시간 버튼을 나열하기 위함
-        const baseHour = 10 + (movieId % 5) + (idx % 3); 
-        const fakeTimes = [
-            `${baseHour}:00`,
-            `${baseHour + 2}:30`,
-            `${baseHour + 5}:10`,
-            `${baseHour + 7}:45`
-        ].filter(time => {
-            // 시간 슬라이더(minTime, maxTime) 필터 연동
-            const [h, m] = time.split(':').map(Number);
-            const totalMins = h * 60 + m;
-            return totalMins >= minTime && totalMins <= maxTime;
-        });
-
-        // 만약 필터링된 상영 시간이 없다면 이 극장은 표시하지 않거나 패스
-        if (fakeTimes.length === 0) return '';
-
-        // 네이버 예매 화면 스타일의 시간 버튼 HTML 생성
-        const timeButtonsHTML = fakeTimes.map(time => {
-            const [h, m] = time.split(':').map(Number);
-            // 대략 2시간 뒤 종료되도록 계산
-            const endHour = m + 120 >= 1440 ? 24 : h + 2; 
-            const endMin = String((m + 20) % 60).padStart(2, '0');
-            
-            return `
-                <button class="time-slot-btn" onclick="alert('${t.name} ${time} 예매 페이지로 이동합니다.')">
-                    <span class="start-time">${time}</span>
-                    <span class="end-time">~${endHour}:${endMin}</span>
-                    <span class="hall-info">${(idx % 3) + 1}관 층</span>
-                </button>
-            `;
-        }).join('');
-
-        const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
-        
         return `
         <div class="theater-schedule-box">
             <div class="theater-header">
@@ -741,12 +930,14 @@ function renderTheaters(movieId) {
                 </div>
                 <a class="map-link-btn" href="${googleMapUrl}" target="_blank" rel="noopener">지도보기 ↗</a>
             </div>
-            <div class="time-slots-container">
-                ${timeButtonsHTML}
-            </div>
+            ${scheduleSectionsHTML}
         </div>`;
-   }).join('');
+    }).join('');
 
+    const noResult = rows.trim() === '';
+    list.innerHTML = noResult
+        ? `<div class="no-theater"><div class="no-icon">🕐</div><div>해당 조건의 상영 시간이 없습니다</div><div style="font-size:0.78rem;color:#ccc;margin-top:6px;">날짜 또는 시간 범위를 변경해보세요</div></div>`
+        : rows;
 }
 
 // --- 19. 브레드크럼 ---

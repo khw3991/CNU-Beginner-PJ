@@ -12,14 +12,14 @@
 @font-face {
     font-family: 'Paperozi';
     src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-7Bold.woff2') format('woff2');
-    font-weight : 700;
+    font-weight: 700;
     font-display: swap;
 }
 
 @font-face {
     font-family: 'Paperozi';
     src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-8ExtraBold.woff2') format('woff2');
-    font-weight : 800;
+    font-weight: 800;
     font-display: swap;
 }
 
@@ -53,7 +53,7 @@ header {
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
-    color : #e7f2ee;
+    color: #e7f2ee;
 }
 
     #logo .logo-icon {
@@ -119,9 +119,8 @@ header {
     min-width: 0; /* 슬라이더가 부모 뚫는 현상 방지 */
     display: flex;
     flex-direction: column;
-    
     /* ── 이 부분을 100%에서 320px로 수정! ── */
-    height: 320px; 
+    height: 320px;
 }
 
 .section-title {
@@ -130,13 +129,13 @@ header {
     margin-bottom: 3px;
     flex-shrink: 0;
     text-align: right;
-    padding : 5px 0;
+    padding: 5px 0;
 }
 
 /* 슬라이더 뷰포트 — 넘치는 카드 숨김 */
 .slider-viewport {
-    flex: 1;        /* 제목을 제외한 나머지 높이를 꽉 채움 (지도의 높이와 같아짐) */
-    overflow: hidden; 
+    flex: 1; /* 제목을 제외한 나머지 높이를 꽉 채움 (지도의 높이와 같아짐) */
+    overflow: hidden;
     position: relative;
     border-radius: 12px;
     width: 100%;
@@ -146,82 +145,83 @@ header {
 .movie-row {
     display: flex;
     gap: 14px;
-    height: 100%;   /* 부모(뷰포트)의 높이를 그대로 이어받음 */
+    height: 100%; /* 부모(뷰포트)의 높이를 그대로 이어받음 */
     will-change: transform;
 }
 
 /* 개별 카드 */
 .movie-card-mini {
-    width: 150px;       /* [수정] 명확한 가로 폭을 주어 겹침 현상과 자바스크립트 계산 오류 완벽 해결 */
-    height: 100%;       /* 세로 높이는 미니맵과 똑같이 꽉 채움 */
+    width: 150px; /* [수정] 명확한 가로 폭을 주어 겹침 현상과 자바스크립트 계산 오류 완벽 해결 */
+    height: 100%; /* 세로 높이는 미니맵과 똑같이 꽉 채움 */
     display: flex;
-    flex-direction: column; 
-    align-items: center;    
+    flex-direction: column;
+    align-items: center;
     flex-shrink: 0;
     text-align: center;
     cursor: pointer;
     transition: transform 0.15s;
 }
-.movie-card-mini:hover {
-    transform: translateY(-4px);
-}
 
-/* 영화 포스터 이미지 */
-.movie-card-mini img {
-    width: 100%;        /* 카드가 가진 가로 폭을 꽉 채움 */
-    flex: 1;            /* 순위와 제목을 제외한 남은 세로 공간을 전부 차지 */
-    min-height: 0;      /* 플렉스 박스 안에서 이미지가 터지는 현상 방지 */
-    object-fit: cover;  /* 비율이 살짝 바뀌어도 포스터가 찌그러지지 않고 이쁘게 잘림 */
-    border-radius: 8px;
-    border: 1px solid #eee;
-    display: block;
-}
+    .movie-card-mini:hover {
+        transform: translateY(-4px);
+    }
 
-/* 순위 텍스트 */
-.movie-card-mini .rank {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #4e6866;
-    margin-top: 6px;    /* 이미지와의 간격 확보 */
-    margin-bottom: 4px;
-    flex-shrink: 0; 
-    width: 100%;        /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+    /* 영화 포스터 이미지 */
+    .movie-card-mini img {
+        width: 100%; /* 카드가 가진 가로 폭을 꽉 채움 */
+        flex: 1; /* 순위와 제목을 제외한 남은 세로 공간을 전부 차지 */
+        min-height: 0; /* 플렉스 박스 안에서 이미지가 터지는 현상 방지 */
+        object-fit: cover; /* 비율이 살짝 바뀌어도 포스터가 찌그러지지 않고 이쁘게 잘림 */
+        border-radius: 8px;
+        border: 1px solid #eee;
+        display: block;
+    }
 
-/* 영화 제목 텍스트 */
-.movie-card-mini p {
-    font-size: 0.76rem;
-    color: #555;
-    margin-top: 4px;
-    flex-shrink: 0; 
-    width: 100%;        /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
+    /* 순위 텍스트 */
+    .movie-card-mini .rank {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #4e6866;
+        margin-top: 6px; /* 이미지와의 간격 확보 */
+        margin-bottom: 4px;
+        flex-shrink: 0;
+        width: 100%; /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-/* 스켈레톤 로딩 (데이터를 가져오기 전 레이아웃) */
-.movie-card-mini.skeleton .skeleton-img {
-    width: 100%;          
-    flex: 1;
-    border-radius: 8px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-}
+    /* 영화 제목 텍스트 */
+    .movie-card-mini p {
+        font-size: 0.76rem;
+        color: #555;
+        margin-top: 4px;
+        flex-shrink: 0;
+        width: 100%; /* [수정] 텍스트가 깨지지 않도록 정상 너비 부여 */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
-.movie-card-mini.skeleton .skeleton-text {
-    height: 12px;
-    border-radius: 4px;
-    margin-top: 10px;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s infinite;
-    width: 80%;         /* 텍스트 바가 너무 꽉 차지 않게 조절 */
-}
+    /* 스켈레톤 로딩 (데이터를 가져오기 전 레이아웃) */
+    .movie-card-mini.skeleton .skeleton-img {
+        width: 100%;
+        flex: 1;
+        border-radius: 8px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+    }
+
+    .movie-card-mini.skeleton .skeleton-text {
+        height: 12px;
+        border-radius: 4px;
+        margin-top: 10px;
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        width: 80%; /* 텍스트 바가 너무 꽉 차지 않게 조절 */
+    }
 
 @keyframes shimmer {
     0% {
@@ -774,6 +774,13 @@ header {
 
 .detail-right {
     flex: 1;
+    min-width: 0;
+}
+
+#theater-list {
+    max-height: 600px;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 #detail-title {
@@ -1008,9 +1015,17 @@ header {
     background: #fff;
     border: 1px solid #eef2f0;
     border-radius: 12px;
-    padding: 20px;
+    padding: 16px 20px;
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    height: 210px !important;
+    min-height: 210px !important;
+    max-height: 210px !important;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
 }
 
 /* 2. 극장 이름과 지도보기 버튼이 있는 상단 헤더 */
@@ -1018,9 +1033,10 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     border-bottom: 1px solid #f7f9f8;
     padding-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .theater-name-wrapper {
@@ -1054,42 +1070,59 @@ header {
     transition: all 0.2s;
 }
 
-.map-link-btn:hover {
-    background: #f5f9f6;
-}
+    .map-link-btn:hover {
+        background: #f5f9f6;
+    }
 
-/* 3. 네이버 핵심: 상영 시간 버튼들을 가로로 나열하고 넘치면 스크롤하는 구역 */
+/* ── 날짜별 그룹 (상세 페이지 상영 시간) ── */
+
 .time-slots-container {
     display: flex;
     gap: 10px;
-    overflow-x: auto; /* 가로 스크롤 활성화 */
-    padding-bottom: 8px;
-    /* 스크롤바 디자인 (웹킷 브라우저용) */
+    overflow-x: auto;
+    overflow-y: visible;
+    flex: 1;
+    align-items: center;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
 }
 
-.time-slots-container::-webkit-scrollbar {
-    height: 4px;
-}
-.time-slots-container::-webkit-scrollbar-thumb {
-    background: #ddd;
-    border-radius: 2px;
-}
+    .time-slots-container::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .time-slots-container::-webkit-scrollbar-thumb {
+        background: #ddd;
+        border-radius: 2px;
+    }
 
 /* 4. 네이버 예매 화면 스타일의 개별 시간 버튼 */
 .time-slot-btn {
-    flex: 0 0 auto; /* 크기 줄어들지 않도록 고정 */
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     width: 95px;
-    height: 70px;
+    height: 88px;
     background: #fff;
     border: 1px solid #e4e8e6;
     border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s ease;
+}
+
+.slot-date {
+    font-size: 0.65rem;
+    color: #02494D;
+    font-weight: 700;
+    background: #eef6f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    white-space: nowrap;
 }
 
 .time-slot-btn:hover {
@@ -1111,7 +1144,50 @@ header {
     margin-bottom: 4px;
 }
 
-.hall-info {
-    font-size: 0.75rem;
-    color: #666;
+
+/* ══════════════════════════════════════
+   상세 페이지 날짜·시간 필터
+══════════════════════════════════════ */
+.detail-filter-bar {
+    background: #f9fafb;
+    border: 1px solid #eef0ef;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
+
+.detail-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.detail-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+#detail-reset-btn {
+    padding: 5px 12px;
+    background: #fff;
+    border: 1.5px solid #ddd;
+    color: #999;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+    #detail-reset-btn:hover {
+        border-color: #e63946;
+        color: #e63946;
+        background: #fff5f5;
+    }
