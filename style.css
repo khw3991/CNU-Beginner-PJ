@@ -1191,3 +1191,63 @@ header {
         color: #e63946;
         background: #fff5f5;
     }
+
+/* ══════════════════════════════════════════
+   CGV 상영 정보 연동 — 추가 스타일
+══════════════════════════════════════════ */
+
+/* 상영 타입 배지 */
+.screen-type-badge {
+    display: inline-block;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+.type-2d    { background: #e8e8e8; color: #555; }
+.type-3d    { background: #dbeafe; color: #1d4ed8; }
+.type-imax  { background: #1c1c1c; color: #f5c518; }
+.type-4dx   { background: #fef9c3; color: #854d0e; }
+.type-screenx { background: #ede9fe; color: #5b21b6; }
+
+/* CGV 링크 배지 */
+.cgv-link-badge {
+    display: inline-block;
+    background: #e63946;
+    color: #fff !important;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-decoration: none;
+    margin-left: 6px;
+    vertical-align: middle;
+    transition: opacity 0.15s;
+}
+.cgv-link-badge:hover { opacity: 0.82; }
+
+/* 극장 주소 */
+.theater-address {
+    font-size: 0.72rem;
+    color: #999;
+    padding: 0 16px 10px;
+    margin-top: -6px;
+}
+
+/* 시간 슬롯 버튼 — 상영 정보 2줄 레이아웃 */
+.time-slot-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    min-width: 90px;
+}
+.time-slot-btn .screen-type-badge,
+.time-slot-btn .seat-badge {
+    align-self: flex-start;
+}

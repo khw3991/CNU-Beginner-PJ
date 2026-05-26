@@ -8,44 +8,42 @@ const TMDB_API_KEY   = "96a2f165cbef86dc5d7af5cc9c31fb62";
 const GOOGLE_API_KEY = "AIzaSyCS0R14HglGfb2Di6WK587FKuxfy3n6ez4";
 
 // --- 2. 상영관 데이터 ---
-// nearbyTheaters: Google Places API 로 동적 로드
+// nearbyTheaters: Google Places API + CGV 모듈로 로드
 let nearbyTheaters = [];
 
-// 하드코딩 theaters는 showtimes 생성용으로만 유지 (rank 매핑)
-const theaters = [
-    { id: 101, name: "CGV 강남",        lat: 37.501, lng: 127.025, movieRanks: [1,2,5]  },
-    { id: 102, name: "메가박스 코엑스",  lat: 37.512, lng: 127.058, movieRanks: [1,3,4]  },
-    { id: 103, name: "롯데시네마 신림",  lat: 37.484, lng: 126.929, movieRanks: [2,5,6]  }
-];
+// CGV 캐시: { movieId → [ { theaterId, theaterName, lat, lng, address, showtimes } ] }
+const cgvShowtimeCache = {};
 
-// 상영 시간 템플릿 (극장 index 별)
-const SHOWTIME_TEMPLATES = [
-    ["13:00","16:30","19:00","21:30"],
-    ["12:00","15:30","18:00","20:30"],
-    ["14:00","17:00","20:00","22:30"]
-];
+// ──────────────────────────────────────────
+//  showtimes 호환 변환 헬퍼
+//  cgv-showtimes.js 의 포맷 →
+//  기존 코드가 사용하는 { date, times[] } 포맷으로 변환
+//  (상세 페이지 renderTheaters 에서는 cgvData 를 직접 사용하므로
+//   여기서는 검색 필터용 경량 포맷만 생성)
+// ──────────────────────────────────────────
+function cgvToLegacyShowtimes(cgvTheaters) {
+    // 모든 극장의 날짜+시간을 합산한 경량 포맷
+    const byDate = {};
+    cgvTheaters.forEach(theater => {
+        theater.showtimes.forEach(({ date, schedules }) => {
+            if (!byDate[date]) byDate[date] = new Set();
+            schedules.forEach(s => byDate[date].add(s.time));
+        });
+    });
+    return Object.entries(byDate).map(([date, timeSet]) => ({
+        date,
+        times: [...timeSet].sort()
+    }));
+}
 
-// 모든 영화에 fake showtimes 생성 (movieId 기반으로 결정론적으로)
-function generateFakeShowtimes(movieId) {
-    const showtimes = [];
-    // movieId 기반으로 어떤 극장 index 패턴을 쓸지 결정 (1~3개 극장)
-    const numTheaters = (movieId % 3) + 1;
-    for (let tIdx = 0; tIdx < numTheaters; tIdx++) {
-        const theaterOffset = (movieId + tIdx * 7) % SHOWTIME_TEMPLATES.length;
-        for (let dayOff = 0; dayOff < 7; dayOff++) {
-            const times = SHOWTIME_TEMPLATES[theaterOffset].filter((_, i) =>
-                (i + dayOff + movieId) % 2 === 0 || dayOff === 0
-            );
-            if (times.length > 0) {
-                showtimes.push({
-                    date: dateKey(dayOff),
-                    theaterIdx: tIdx,
-                    times
-                });
-            }
-        }
-    }
-    return showtimes;
+// ──────────────────────────────────────────
+//  CGV 상영 정보 로드 (캐시 우선)
+// ──────────────────────────────────────────
+async function loadCGVShowtimes(movieId, movieTitle) {
+    if (cgvShowtimeCache[movieId]) return cgvShowtimeCache[movieId];
+    const data = await fetchCGVShowtimes(movieTitle, movieId);
+    cgvShowtimeCache[movieId] = data;
+    return data;
 }
 
 // --- 3. 전역 상태 ---
@@ -99,34 +97,23 @@ async function fetchMovieData() {
             const tmdbData = await tmdbRes.json();
             const info     = tmdbData.results?.[0] ?? null;
 
-            // showtimes 자동 생성: 해당 rank 를 상영하는 극장 찾아서 날짜별로 배분
-            const showtimes = [];
-            theaters.forEach((t, tIdx) => {
-                if (t.movieRanks.includes(rank)) {
-                    // 오늘 + 3일치 상영 일정 생성
-                    for (let dayOff = 0; dayOff < 4; dayOff++) {
-                        if (dayOff === 1 && tIdx === 0) continue; // 약간의 변화
-                        showtimes.push({
-                            date: dateKey(dayOff),
-                            theaterId: t.id,
-                            times: SHOWTIME_TEMPLATES[tIdx].filter((_, i) => (i + dayOff) % 2 === 0 || dayOff === 0)
-                        });
-                    }
-                }
-            });
+            // CGV 상영 정보 로드 (비동기, 캐시 우선)
+            const cgvData  = await loadCGVShowtimes(rank, kMovie.movieNm);
+            // 검색 필터용 경량 showtimes 포맷으로 변환
+            const showtimes = cgvToLegacyShowtimes(cgvData);
 
             return {
-                id:       rank,                          // 순위를 id로 사용
+                id:       rank,
                 rank,
                 title:    kMovie.movieNm,
                 rating:   info ? parseFloat(info.vote_average.toFixed(1)) : 'N/A',
                 audience: (parseInt(kMovie.audiAcc) / 10000).toFixed(1) + '만',
                 seats:    250,
-                seatsLeft: Math.floor(Math.random() * 200) + 20, // 좌석은 랜덤 시뮬레이션
+                seatsLeft: 0, // CGV 상세 데이터에서 관리
                 poster:   info?.poster_path
                             ? `https://image.tmdb.org/t/p/w500${info.poster_path}`
                             : 'https://via.placeholder.com/500x750?text=No+Image',
-                showtimes: generateFakeShowtimes(rank)
+                showtimes  // 경량 포맷 (날짜 필터용)
             };
         });
 
@@ -146,18 +133,20 @@ async function fetchMovieData() {
             for (const t of (result.value.results ?? [])) {
                 if (kobisIds.has(t.title)) continue; // 중복 제거
                 kobisIds.add(t.title);
+                const eId = extraId++;
+                const cgvExtra = await loadCGVShowtimes(eId, t.title);
                 extraMovies.push({
-                    id:        extraId++,
+                    id:        eId,
                     rank:      null,
                     title:     t.title,
                     rating:    t.vote_average ? parseFloat(t.vote_average.toFixed(1)) : 'N/A',
                     audience:  '-',
                     seats:     250,
-                    seatsLeft: Math.floor(Math.random() * 200) + 20,
+                    seatsLeft: 0,
                     poster:    t.poster_path
                                  ? `https://image.tmdb.org/t/p/w500${t.poster_path}`
                                  : 'https://via.placeholder.com/500x750?text=No+Image',
-                    showtimes: generateFakeShowtimes(extraId)
+                    showtimes: cgvToLegacyShowtimes(cgvExtra)
                 });
             }
         }
@@ -815,26 +804,28 @@ function setupDetailTimeSlider(movieId) {
     syncFromRanges();
 }
 
-// --- 18. 상영관 리스트 (Google Places 기반) ---
-function renderTheaters(movieId) {
+// --- 18. 상영관 리스트 (CGV 데이터 기반) ---
+async function renderTheaters(movieId) {
     const list  = document.getElementById('theater-list');
     const movie = allMovies.find(m => m.id === movieId);
     if (!movie) return;
 
-    // nearbyTheaters 가 아직 로드 안 됐을 때
-    if (nearbyTheaters.length === 0) {
-        list.innerHTML = `
-            <div class="no-theater">
-                <div class="no-icon">🗺️</div>
-                <div>주변 상영관을 불러오는 중입니다...</div>
-                <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">위치 권한을 허용했는지 확인해주세요</div>
-            </div>`;
-        setTimeout(() => { if (currentMovieId === movieId) renderTheaters(movieId); }, 2000);
-        return;
+    list.innerHTML = `<div class="no-theater"><div class="no-icon" style="font-size:1.5rem">⏳</div><div>CGV 상영 정보를 불러오는 중...</div></div>`;
+
+    // CGV 상영 데이터 로드 (캐시 우선)
+    const cgvData = await loadCGVShowtimes(movieId, movie.title);
+
+    // 날짜 라벨 맵
+    const dateLabels = {};
+    for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const key = `${d.getMonth()+1}-${d.getDate()}`;
+        dateLabels[key] = `${d.getMonth()+1}/${d.getDate()} (${DAY_NAMES[d.getDay()]})`;
     }
 
-    // 거리 계산 + currentDistance 필터 + 정렬
-    const filteredTheaters = nearbyTheaters
+    // CGV 극장 + 거리 계산 + currentDistance 필터 + 정렬
+    const cgvWithDist = cgvData
         .map(t => ({
             ...t,
             dist: getDistance(userCoords.lat, userCoords.lng, t.lat, t.lng)
@@ -842,101 +833,99 @@ function renderTheaters(movieId) {
         .filter(t => t.dist <= currentDistance)
         .sort((a, b) => a.dist - b.dist);
 
-    if (filteredTheaters.length === 0) {
+    if (cgvWithDist.length === 0) {
         list.innerHTML = `
             <div class="no-theater">
                 <div class="no-icon">😭</div>
-                <div>${currentDistance}km 이내 상영관이 없습니다</div>
+                <div>${currentDistance}km 이내 CGV 상영관이 없습니다</div>
                 <div style="font-size:0.78rem;color:#ccc;margin-top:6px;">거리 범위를 늘려보세요</div>
             </div>`;
         return;
     }
 
     const hasDetailDateFilter = detailSelectedDates.size > 0;
-    const hasDetailTimeFilter = detailMinTime !== 0 || detailMaxTime !== 1440;
 
-    // dateKey → 날짜 라벨 맵 (오늘~6일 후)
-    const dateLabels = {};
-    for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() + i);
-        const key = `${d.getMonth()+1}-${d.getDate()}`;
-        const dayName = DAY_NAMES[d.getDay()];
-        dateLabels[key] = `${d.getMonth()+1}/${d.getDate()} (${dayName})`;
-    }
+    // 날짜 정렬 헬퍼
+    const sortedDateKeys = Object.keys(dateLabels).sort((a, b) => {
+        const [am, ad] = a.split('-').map(Number);
+        const [bm, bd] = b.split('-').map(Number);
+        return am !== bm ? am - bm : ad - bd;
+    });
 
-    // 날짜별로 시간을 묶어서 반환 — [{date, label, times}, ...]
-    const getScheduleByDate = () => {
-        // 어떤 날짜 키를 보여줄지 결정
+    const rows = cgvWithDist.map(theater => {
+        // 이 극장의 날짜별 상영 데이터 가져오기
         const targetDates = hasDetailDateFilter
             ? [...detailSelectedDates].sort()
-            : Object.keys(dateLabels).sort((a, b) => {
-                const [am, ad] = a.split('-').map(Number);
-                const [bm, bd] = b.split('-').map(Number);
-                return am !== bm ? am - bm : ad - bd;
+            : sortedDateKeys;
+
+        const scheduleSections = targetDates.map(dk => {
+            const dayData = theater.showtimes.find(s => s.date === dk);
+            if (!dayData) return '';
+
+            // 시간 필터 적용
+            const filteredSchedules = dayData.schedules.filter(sch => {
+                const [h, m] = sch.time.split(':').map(Number);
+                const totalMins = h * 60 + m;
+                return totalMins >= detailMinTime && totalMins <= detailMaxTime;
             });
+            if (filteredSchedules.length === 0) return '';
 
-        return targetDates.map(dateKey => {
-            // 해당 날짜의 showtimes에서 시간 필터 적용
-            const timesForDate = new Set();
-            movie.showtimes.forEach(s => {
-                if (s.date !== dateKey) return;
-                s.times.forEach(t => {
-                    const [h, m] = t.split(':').map(Number);
-                    const totalMins = h * 60 + m;
-                    if (totalMins >= detailMinTime && totalMins <= detailMaxTime) {
-                        timesForDate.add(t);
-                    }
-                });
-            });
-            // 시간 오름차순 정렬
-            const sorted = [...timesForDate].sort((a, b) => {
-                const [ah, am] = a.split(':').map(Number);
-                const [bh, bm] = b.split(':').map(Number);
-                return (ah * 60 + am) - (bh * 60 + bm);
-            });
-            return { dateKey, label: dateLabels[dateKey] || dateKey, times: sorted };
-        }).filter(d => d.times.length > 0);
-    };
+            const label = dateLabels[dk] || dk;
+            const buttons = filteredSchedules.map(sch => {
+                // 좌석 상태 계산
+                const ratio = sch.seatsLeft / sch.totalSeats;
+                let seatClass, seatLabel;
+                if      (ratio >= 0.5) { seatClass = 'seat-plenty'; seatLabel = `여유 ${sch.seatsLeft}석`; }
+                else if (ratio >= 0.2) { seatClass = 'seat-few';    seatLabel = `혼잡 ${sch.seatsLeft}석`; }
+                else                   { seatClass = 'seat-last';   seatLabel = `마감임박 ${sch.seatsLeft}석`; }
 
-    const rows = filteredTheaters.map((t, idx) => {
-        const schedule = getScheduleByDate();
-        if (schedule.length === 0) return '';
+                // 상영 타입 배지 색상
+                const typeBadgeClass = {
+                    'IMAX': 'type-imax', 'IMAX 3D': 'type-imax',
+                    '4DX': 'type-4dx', '4DX 3D': 'type-4dx',
+                    'ScreenX': 'type-screenx',
+                    '3D': 'type-3d'
+                }[sch.screenType] || 'type-2d';
 
-        const allTimeButtonsHTML = schedule.map(({ label, times }) =>
-            times.map(time => {
-                const [h, m] = time.split(':').map(Number);
-                const endHour = m + 120 >= 1440 ? 24 : h + 2;
-                const endMin  = String((m + 20) % 60).padStart(2, '0');
-                return `
-                    <button class="time-slot-btn" onclick="alert('${t.name} ${label} ${time} 예매 페이지로 이동합니다.')">
-                        <span class="slot-date">${label}</span>
-                        <span class="start-time">${time}</span>
-                        <span class="end-time">~${endHour}:${endMin}</span>
-                        <span class="hall-info">${(idx % 3) + 1}관</span>
-                    </button>`;
-            }).join('')
-        ).join('');
+                // CGV 예매 링크 (실제 연동 시 theaterCode + 영화코드로 URL 생성)
+                const bookingUrl = `https://www.cgv.co.kr/ticket/`;
 
-        const scheduleSectionsHTML = `<div class="time-slots-container">${allTimeButtonsHTML}</div>`;
+                return `<button class="time-slot-btn" onclick="window.open('${bookingUrl}', '_blank')">
+                    <span class="slot-date">${label}</span>
+                    <span class="start-time">${sch.time}</span>
+                    <span class="end-time">~${sch.endTime}</span>
+                    <span class="hall-info">${sch.hall}</span>
+                    <span class="screen-type-badge ${typeBadgeClass}">${sch.screenType}</span>
+                    <span class="seat-badge ${seatClass}">${seatLabel}</span>
+                </button>`;
+            }).join('');
 
-        const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t.name)}&query_place_id=${t.placeId}`;
+            return buttons;
+        }).join('');
+
+        if (!scheduleSections.trim()) return '';
+
+        const googleMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(theater.theaterName)}`;
+        const cgvUrl = `https://www.cgv.co.kr/theaters/?areacode=01&theaterCode=${theater.theaterCode}`;
+
         return `
         <div class="theater-schedule-box">
             <div class="theater-header">
                 <div class="theater-name-wrapper">
-                    <span class="theater-name">${t.name}</span>
-                    <span class="theater-dist">📍 ${t.dist.toFixed(1)}km</span>
+                    <span class="theater-name">${theater.theaterName}</span>
+                    <span class="theater-dist">📍 ${theater.dist.toFixed(1)}km</span>
+                    <a class="cgv-link-badge" href="${cgvUrl}" target="_blank" rel="noopener">CGV↗</a>
                 </div>
                 <a class="map-link-btn" href="${googleMapUrl}" target="_blank" rel="noopener">지도보기 ↗</a>
             </div>
-            ${scheduleSectionsHTML}
+            <div class="theater-address">${theater.address}</div>
+            <div class="time-slots-container">${scheduleSections}</div>
         </div>`;
     }).join('');
 
     const noResult = rows.trim() === '';
     list.innerHTML = noResult
-        ? `<div class="no-theater"><div class="no-icon">🕐</div><div>해당 조건의 상영 시간이 없습니다</div><div style="font-size:0.78rem;color:#ccc;margin-top:6px;">날짜 또는 시간 범위를 변경해보세요</div></div>`
+        ? `<div class="no-theater"><div class="no-icon">🕐</div><div>해당 조건의 CGV 상영 시간이 없습니다</div><div style="font-size:0.78rem;color:#ccc;margin-top:6px;">날짜 또는 시간 범위를 변경해보세요</div></div>`
         : rows;
 }
 
