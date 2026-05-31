@@ -457,14 +457,16 @@ function setupMap() {
             });
 
             const infoWindow = new google.maps.InfoWindow({
-                content: `
-                    <div style="font-family:'Apple SD Gothic Neo',sans-serif;padding:4px 2px;min-width:140px;">
-                        <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">${t.name}</div>
-                        <div style="font-size:0.75rem;color:#888;margin-bottom:4px;">📍 ${dist.toFixed(1)}km</div>
-                        ${t.rating ? `<div style="font-size:0.75rem;color:#f57f17;">⭐ ${t.rating}</div>` : ''}
-                        ${t.open !== null ? `<div style="font-size:0.72rem;color:${t.open ? '#2e7d32' : '#c62828'};margin-top:3px;">${t.open ? '🟢 영업중' : '🔴 영업종료'}</div>` : ''}
-                    </div>`
-            });
+    content: `
+        <div style="font-family:'Apple SD Gothic Neo',sans-serif;padding:2px;min-width:130px;max-width:160px;">
+            <div style="font-weight:700;font-size:0.85rem;margin-bottom:2px;">${t.name}</div>
+            <div style="font-size:0.72rem;color:#888;">📍 ${dist.toFixed(1)}km ${t.rating ? `· ⭐ ${t.rating}` : ''} ${t.open !== null ? `· <span style="color:${t.open ? '#2e7d32' : '#c62828'}">${t.open ? '영업중' : '영업종료'}</span>` : ''}</div>
+            <button onclick="viewTheater('${t.name}', '${t.address}')" 
+                style="margin-top:6px;width:100%;padding:5px;background:#022B2F;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.78rem;">
+                🎬 상영 영화 보기
+            </button>
+        </div>`
+});
 
             marker.addListener('click', () => {
                 mapMarkers.forEach(m => m.iw?.close());
@@ -929,6 +931,49 @@ async function renderTheaters(movieId) {
         : rows;
 }
 
+function viewTheater(theaterName, theaterAddress) {
+    // infoWindow 닫기
+    mapMarkers.forEach(m => m.iw?.close());
+
+    // 극장 페이지로 이동
+    showPage('theater-page');
+    document.getElementById('selected-theater-name').textContent = theaterName;
+    document.getElementById('selected-theater-info').textContent = theaterAddress;
+
+    setBreadcrumb([
+        { label: '홈', page: 'main-page' },
+        { label: theaterName, page: null }
+    ]);
+
+    // 해당 극장 이름이 포함된 영화 찾기
+    const theaterMovieList = document.getElementById('theater-movie-list');
+    theaterMovieList.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;">⏳ 상영 영화를 불러오는 중...</div>';
+
+    // CGV 캐시에서 해당 극장 이름으로 영화 찾기
+    const matchedMovies = [];
+
+    allMovies.forEach(movie => {
+        const cgvData = cgvShowtimeCache[movie.id];
+        if (!cgvData) return;
+        const hasThisTheater = cgvData.some(t =>
+            t.theaterName.includes(theaterName) || theaterName.includes(t.theaterName)
+        );
+        if (hasThisTheater) matchedMovies.push(movie);
+    });
+
+    if (matchedMovies.length === 0) {
+        theaterMovieList.innerHTML = `
+            <div style="grid-column:1/-1;text-align:center;padding:60px;color:#bbb;">
+                <div style="font-size:2rem;margin-bottom:10px;">🎬</div>
+                <div>상영 영화 정보가 없습니다</div>
+                <div style="font-size:0.78rem;margin-top:6px;color:#ccc;">CGV 지점이 아니거나 데이터가 없을 수 있어요</div>
+            </div>`;
+        return;
+    }
+
+    theaterMovieList.innerHTML = matchedMovies.map(m => makeMovieItemHTML(m)).join('');
+}
+
 // --- 19. 브레드크럼 ---
 function setBreadcrumb(crumbs) {
     const nav = document.getElementById('breadcrumb');
@@ -992,6 +1037,9 @@ document.querySelectorAll('.sort-btn').forEach(btn => {
     });
 });
 document.getElementById('reset-filter-btn')?.addEventListener('click', resetFilters);
+document.getElementById('back-to-main-btn')?.addEventListener('click', () => {
+    showPage('main-page');
+});
 document.getElementById('logo').onclick = () => showPage('main-page');
 
 // --- 22. 초기화 ---
