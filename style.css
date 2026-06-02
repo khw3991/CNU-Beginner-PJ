@@ -727,8 +727,8 @@ header {
 ══════════════════════════════════════ */
 .detail-container {
     display: flex;
-    gap: 60px;
-    padding: 50px 60px;
+    gap: 36px;
+    padding: 30px 28px;
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -778,8 +778,6 @@ header {
 }
 
 #theater-list {
-    max-height: 600px;
-    overflow-y: auto;
     padding-right: 4px;
 }
 
@@ -1018,14 +1016,9 @@ header {
     padding: 16px 20px;
     margin-bottom: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    height: 210px !important;
-    min-height: 210px !important;
-    max-height: 210px !important;
-    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    overflow: hidden;
 }
 
 /* 2. 극장 이름과 지도보기 버튼이 있는 상단 헤더 */
@@ -1078,14 +1071,12 @@ header {
 
 .time-slots-container {
     display: flex;
-    gap: 10px;
+    gap: 14px;
     overflow-x: auto;
     overflow-y: visible;
-    flex: 1;
-    align-items: center;
-    padding-bottom: 6px;
-    -webkit-overflow-scrolling: touch;
+    padding: 4px 0 10px;
     min-width: 0;
+    -webkit-overflow-scrolling: touch;
 }
 
     .time-slots-container::-webkit-scrollbar {
@@ -1097,38 +1088,55 @@ header {
         border-radius: 2px;
     }
 
+/* 날짜 그룹 */
+.date-slot-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.date-slot-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #02494D;
+    background: #eef6f5;
+    padding: 3px 10px;
+    border-radius: 5px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.date-slot-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+
+
 /* 4. 네이버 예매 화면 스타일의 개별 시간 버튼 */
 .time-slot-btn {
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    width: 95px;
-    height: 88px;
+    width: 92px;
+    padding: 8px 10px;
     background: #fff;
     border: 1px solid #e4e8e6;
     border-radius: 8px;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.15s ease;
+    gap: 2px;
 }
 
-.slot-date {
-    font-size: 0.65rem;
-    color: #02494D;
-    font-weight: 700;
-    background: #eef6f5;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-bottom: 4px;
-    white-space: nowrap;
-}
-
-.time-slot-btn:hover {
-    border-color: #00c73c;
-    background: #f9fdfa;
-}
+    .time-slot-btn:hover {
+        border-color: #00c73c;
+        background: #f9fdfa;
+    }
 
 /* 버튼 안의 텍스트들 */
 .start-time {
@@ -1149,41 +1157,48 @@ header {
    상세 페이지 날짜·시간 필터
 ══════════════════════════════════════ */
 .detail-filter-bar {
-    background: #f9fafb;
-    border: 1px solid #eef0ef;
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.detail-filter-header {
+    background: #fafafa;
+    border: 1.5px solid #eee;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .detail-filter-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+.detail-filter-header {
+    display: none;
 }
 
 .detail-filter-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    flex-wrap: wrap;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
 #detail-reset-btn {
-    padding: 5px 12px;
+    padding: 7px 14px;
     background: #fff;
     border: 1.5px solid #ddd;
     color: #999;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-family: inherit;
     transition: all 0.15s;
     white-space: nowrap;
-    margin-left: auto;
+    flex-shrink: 0;
+    margin-left: 0;
 }
 
     #detail-reset-btn:hover {
@@ -1208,11 +1223,31 @@ header {
     margin-top: 2px;
     white-space: nowrap;
 }
-.type-2d    { background: #e8e8e8; color: #555; }
-.type-3d    { background: #dbeafe; color: #1d4ed8; }
-.type-imax  { background: #1c1c1c; color: #f5c518; }
-.type-4dx   { background: #fef9c3; color: #854d0e; }
-.type-screenx { background: #ede9fe; color: #5b21b6; }
+
+.type-2d {
+    background: #e8e8e8;
+    color: #555;
+}
+
+.type-3d {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.type-imax {
+    background: #1c1c1c;
+    color: #f5c518;
+}
+
+.type-4dx {
+    background: #fef9c3;
+    color: #854d0e;
+}
+
+.type-screenx {
+    background: #ede9fe;
+    color: #5b21b6;
+}
 
 /* CGV 링크 배지 */
 .cgv-link-badge {
@@ -1228,7 +1263,10 @@ header {
     vertical-align: middle;
     transition: opacity 0.15s;
 }
-.cgv-link-badge:hover { opacity: 0.82; }
+
+    .cgv-link-badge:hover {
+        opacity: 0.82;
+    }
 
 /* 극장 주소 */
 .theater-address {
@@ -1238,16 +1276,45 @@ header {
     margin-top: -6px;
 }
 
-/* 시간 슬롯 버튼 — 상영 정보 2줄 레이아웃 */
-.time-slot-btn {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    padding: 8px 10px;
-    min-width: 90px;
-}
 .time-slot-btn .screen-type-badge,
 .time-slot-btn .seat-badge {
     align-self: flex-start;
 }
+
+/* ══════════════════════════════════════
+   극장 페이지 — 뒤로가기 버튼
+══════════════════════════════════════ */
+#back-to-main-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    background: #022B2F;
+    color: #e7f2ee;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 700;
+    font-family: inherit;
+    margin-bottom: 24px;
+    transition: all 0.18s;
+    box-shadow: 0 2px 8px rgba(2,43,47,0.13);
+    letter-spacing: 0.01em;
+}
+
+    #back-to-main-btn::before {
+        content: '🗺️';
+        font-size: 1rem;
+    }
+
+    #back-to-main-btn:hover {
+        background: #02494D;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(2,43,47,0.2);
+    }
+
+    #back-to-main-btn:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 4px rgba(2,43,47,0.1);
+    }

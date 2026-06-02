@@ -682,10 +682,6 @@ function renderDetailFilters(movieId) {
 
     container.innerHTML = `
         <div class="detail-filter-bar">
-            <div class="detail-filter-header">
-                <span class="topbar-label" style="font-size:0.8rem;color:#555;">상영 일정 필터</span>
-                <button id="detail-reset-btn">✕ 초기화</button>
-            </div>
             <div class="detail-filter-row">
                 <span class="topbar-label">날짜 <small>(없으면 전체)</small></span>
                 <div class="date-picker-row" id="detail-date-buttons">${dateBtnsHTML}</div>
@@ -705,6 +701,7 @@ function renderDetailFilters(movieId) {
                     </div>
                 </div>
             </div>
+            <button id="detail-reset-btn">✕ 초기화</button>
         </div>`;
 
     // 날짜 버튼 이벤트
@@ -889,11 +886,9 @@ async function renderTheaters(movieId) {
                     '3D': 'type-3d'
                 }[sch.screenType] || 'type-2d';
 
-                // CGV 예매 링크 (실제 연동 시 theaterCode + 영화코드로 URL 생성)
                 const bookingUrl = `https://www.cgv.co.kr/ticket/`;
 
                 return `<button class="time-slot-btn" onclick="window.open('${bookingUrl}', '_blank')">
-                    <span class="slot-date">${label}</span>
                     <span class="start-time">${sch.time}</span>
                     <span class="end-time">~${sch.endTime}</span>
                     <span class="hall-info">${sch.hall}</span>
@@ -902,7 +897,11 @@ async function renderTheaters(movieId) {
                 </button>`;
             }).join('');
 
-            return buttons;
+            // 날짜 그룹 헤더 + 버튼들
+            return `<div class="date-slot-group">
+                <div class="date-slot-label">${label}</div>
+                <div class="date-slot-buttons">${buttons}</div>
+            </div>`;
         }).join('');
 
         if (!scheduleSections.trim()) return '';
