@@ -1156,6 +1156,26 @@ header {
 /* ══════════════════════════════════════
    상세 페이지 날짜·시간 필터
 ══════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   [수정] 영화 상세 페이지 시간 슬라이더 가로 폭 축소 및 필터 바 최적화
+══════════════════════════════════════════════════════════════ */
+
+/* 1. 상세 페이지 내의 시간 듀얼 슬라이더 폭 조정 (기존 260px -> 220px로 축소) */
+#detail-page #detail-filter-area .dual-range-container {
+    width: 220px; /* 슬라이더 자체의 가로 길이를 대폭 줄여 공간 확보 */
+    height: 32px;
+}
+
+/* 2. 상세 페이지의 시간 영역 컨테이너 폭 제한 및 유연성 부여 */
+#detail-page #detail-filter-area .time-range-wrap {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0; /* 슬라이더가 찌그러지지 않게 방지 */
+}
+
 .detail-filter-bar {
     background: #fafafa;
     border: 1.5px solid #eee;
@@ -1164,7 +1184,8 @@ header {
     margin-bottom: 16px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    justify-content: space-between; /* 요소들 사이에 균등 분배 공간 제공 */
+    gap: 16px;
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1186,6 +1207,19 @@ header {
     flex-shrink: 0;
 }
 
+.detail-filter-bar .detail-filter-row:first-child {
+    flex-shrink: 1; 
+    min-width: 0;
+}
+
+#detail-date-buttons {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+/* 6. 초기화 버튼이 무조건 영역을 확보하고 잘리지 않도록 설정 */
 #detail-reset-btn {
     padding: 7px 14px;
     background: #fff;
@@ -1197,8 +1231,8 @@ header {
     font-family: inherit;
     transition: all 0.15s;
     white-space: nowrap;
-    flex-shrink: 0;
-    margin-left: 0;
+    flex-shrink: 0; /* 공간이 부족해도 절대 버튼이 찌그러지거나 숨겨지지 않음 */
+    margin-left: auto; /* 왼쪽에 자동 마진을 주어 우측 끝에 안정적으로 안착 */
 }
 
     #detail-reset-btn:hover {

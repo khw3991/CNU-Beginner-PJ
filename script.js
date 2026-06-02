@@ -683,7 +683,7 @@ function renderDetailFilters(movieId) {
     container.innerHTML = `
         <div class="detail-filter-bar">
             <div class="detail-filter-row">
-                <span class="topbar-label">날짜 <small>(없으면 전체)</small></span>
+                <span class="topbar-label">날짜</span>
                 <div class="date-picker-row" id="detail-date-buttons">${dateBtnsHTML}</div>
             </div>
             <div class="detail-filter-row">
